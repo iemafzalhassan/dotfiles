@@ -442,17 +442,58 @@ if command -v eza &>/dev/null; then
     echo "✅ eza is installed, configuring icons"
     # Update aliases in common.sh to use eza with icons
     if [[ -f "$DOTFILES_DIR/shell/common.sh" ]]; then
-        sed -i.bak 's/alias ls="ls"/alias ls="eza --icons=always"/g' "$DOTFILES_DIR/shell/common.sh" 2>/dev/null || true
-        sed -i.bak 's/alias ll="ls -alh"/alias ll="eza -la --icons=always"/g' "$DOTFILES_DIR/shell/common.sh" 2>/dev/null || true
-        sed -i.bak 's/alias la="ls -A"/alias la="eza -a --icons=always"/g' "$DOTFILES_DIR/shell/common.sh" 2>/dev/null || true
-        sed -i.bak 's/alias l="ls"/alias l="eza --icons=always"/g' "$DOTFILES_DIR/shell/common.sh" 2>/dev/null || true
+        # Create a new common.sh with eza aliases
+        cat > "$DOTFILES_DIR/shell/common.sh" << 'EOL'
+#!/bin/bash
+# Common shell configuration for all shells
+# Created automatically by install.sh
+
+# Aliases
+# Replace standard ls commands with eza + icons
+alias ls="eza --icons=always"
+alias ll="eza -la --icons=always"
+alias la="eza -a --icons=always"
+alias lt="eza -T --icons=always"
+alias lg="eza -la --git --icons=always"
+
+# Navigation shortcuts
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+
+# Magic Enter function - shows ls and git status when pressing Enter on empty line
+magic_enter() {
+  if [[ -z $BUFFER ]]; then
+    echo ""
+    if git rev-parse --is-inside-work-tree &>/dev/null; then
+      echo "$(eza --icons=always -la)"
+      echo ""
+      echo "$(git status -u .)"
+    else
+      echo "$(eza --icons=always -la)"
+    fi
+    echo ""
+    return 0
+  fi
+  return 1
+}
+EOL
     fi
 else
     echo "⚠️ eza is not installed, installing now..."
     if [[ "$PKG_MANAGER" == "brew" ]]; then
         brew install eza
     elif [[ "$PKG_MANAGER" == "apt" ]]; then
-        sudo apt install -y eza
+        # For Ubuntu/Debian, eza might not be in standard repos
+        # Try to install from GitHub release if apt fails
+        sudo apt install -y eza 2>/dev/null || {
+            echo "Installing eza from GitHub release..."
+            EZA_VERSION="0.15.5"
+            wget -q https://github.com/eza-community/eza/releases/download/v${EZA_VERSION}/eza_x86_64-unknown-linux-gnu.tar.gz -O /tmp/eza.tar.gz
+            tar -xf /tmp/eza.tar.gz -C /tmp
+            sudo mv /tmp/eza /usr/local/bin/
+            sudo chmod +x /usr/local/bin/eza
+        }
     elif [[ "$PKG_MANAGER" == "dnf" ]]; then
         sudo dnf install -y eza
     elif [[ "$PKG_MANAGER" == "pacman" ]]; then

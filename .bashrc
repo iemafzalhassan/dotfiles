@@ -41,65 +41,11 @@ for plugin in "${plugins[@]}"; do
 done
 
 # Load common aliases and functions
-if [ -f "$HOME/.dotfiles/shell/common.sh" ]; then
+if [[ -f "$HOME/.dotfiles/shell/common.sh" ]]; then
   source "$HOME/.dotfiles/shell/common.sh"
 fi
 
-# Bash-specific aliases
-alias ll="eza -la --icons=always"
-alias la="eza -a --icons=always"
-alias ls="eza --icons=always"
-alias lt="eza -T --icons=always"
-alias lg="eza -la --git --icons=always"
-alias bashconfig="vim ~/.bashrc"
-
-# ✅ Smart Navigation (Using Zoxide)
-if command -v zoxide &> /dev/null; then
-  eval "$(zoxide init bash)"
-fi
-
-# ✅ Autosuggestions (for Bash)
-if [ -f "/usr/share/bash-autosuggestions/bash-autosuggestions.sh" ]; then
-  source "/usr/share/bash-autosuggestions/bash-autosuggestions.sh"
-fi
-
-# ✅ Syntax Highlighting (for Bash)
-if [ -f "/usr/share/bash-syntax-highlighting/bash-syntax-highlighting.sh" ]; then
-  source "/usr/share/bash-syntax-highlighting/bash-syntax-highlighting.sh"
-fi
-
-# ✅ Enable History Search with Arrow Keys
-bind '"\e[A": history-search-backward'
-bind '"\e[B": history-search-forward'
-
-# ✅ Set default editor
-if [[ -n $SSH_CONNECTION ]]; then
-  export EDITOR='vim'
-else
-  export EDITOR='vi'
-fi
-
-# Add more Bash-specific enhancements
-# Enable bash-completion if available
-if [[ -f "$HOMEBREW_PREFIX/etc/bash_completion" ]]; then
-  source "$HOMEBREW_PREFIX/etc/bash_completion"
-elif [[ -f /etc/bash_completion ]]; then
-  source /etc/bash_completion
-fi
-
-# Enhanced history settings
-export HISTSIZE=10000
-export HISTFILESIZE=10000
-export HISTCONTROL=ignoreboth:erasedups
-shopt -s histappend
-PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
-
-# Better directory navigation
-shopt -s autocd
-shopt -s dirspell
-shopt -s cdspell
-
-# Enable magic-enter functionality
+# Enable magic-enter functionality for Bash
 # Shows directory listing and git status when pressing Enter on empty line
 magic_enter_cmd() {
   if [[ -z "$READLINE_LINE" ]]; then
@@ -125,9 +71,6 @@ bash_enter_cmd() {
     echo
   fi
 }
-
-# Initialize starship prompt - REMOVE THIS LINE
-# eval "$(starship init bash)"
 
 # Initialize Spaceship prompt (if not already added by the install script)
 if [[ -d "$HOME/.bash-spaceship-prompt" ]]; then
