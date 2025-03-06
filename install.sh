@@ -218,10 +218,21 @@ echo -e "\n🔄 Updating dotfiles repository..."
 DOTFILES_REPO="https://github.com/iemafzalhassan/dotfiles.git"
 DOTFILES_DIR="$HOME/.dotfiles"
 
-if [[ -d "$DOTFILES_DIR" ]]; then
-    git -C "$DOTFILES_DIR" pull
+# Check if we're already in the dotfiles directory
+if [[ "$(pwd)" == *"dotfiles"* ]]; then
+    # We're already in the dotfiles directory, copy to ~/.dotfiles
+    echo "Copying current directory to $DOTFILES_DIR..."
+    mkdir -p "$DOTFILES_DIR"
+    cp -R ./* "$DOTFILES_DIR/"
+    cp -R ./.* "$DOTFILES_DIR/" 2>/dev/null || true  # Copy hidden files too
+elif [[ -d "$DOTFILES_DIR" ]]; then
+    git -C "$DOTFILES_DIR" pull || echo "Not a git repository, skipping pull"
 else
-    git clone "$DOTFILES_REPO" "$DOTFILES_DIR"
+    git clone "$DOTFILES_REPO" "$DOTFILES_DIR" || 
+    echo "Failed to clone repository, copying local files instead" &&
+    mkdir -p "$DOTFILES_DIR" &&
+    cp -R ./* "$DOTFILES_DIR/" &&
+    cp -R ./.* "$DOTFILES_DIR/" 2>/dev/null || true
 fi
 
 # Create shell directory if it doesn't exist
@@ -229,14 +240,62 @@ mkdir -p "$DOTFILES_DIR/shell"
 
 # Copy common.sh to the shell directory if it doesn't exist
 if [[ ! -f "$DOTFILES_DIR/shell/common.sh" ]]; then
-    cp "$DOTFILES_DIR/common.sh" "$DOTFILES_DIR/shell/common.sh" 2>/dev/null || echo "No common.sh file found to copy"
+    if [[ -f "./shell/common.sh" ]]; then
+        cp "./shell/common.sh" "$DOTFILES_DIR/shell/common.sh"
+    elif [[ -f "./common.sh" ]]; then
+        cp "./common.sh" "$DOTFILES_DIR/shell/common.sh"
+    else
+        # Create a basic common.sh if it doesn't exist
+        echo "#!/bin/bash" > "$DOTFILES_DIR/shell/common.sh"
+        echo "# Common shell configuration for all shells" >> "$DOTFILES_DIR/shell/common.sh"
+        echo "# Created automatically by install.sh" >> "$DOTFILES_DIR/shell/common.sh"
+        echo "" >> "$DOTFILES_DIR/shell/common.sh"
+        echo "# Aliases" >> "$DOTFILES_DIR/shell/common.sh"
+        echo "alias ll=\"ls -alh\"" >> "$DOTFILES_DIR/shell/common.sh"
+        echo "alias la=\"ls -A\"" >> "$DOTFILES_DIR/shell/common.sh"
+        echo "alias l=\"ls\"" >> "$DOTFILES_DIR/shell/common.sh"
+    fi
 fi
 
 # Link only the shell configuration for the detected shell
 echo -e "\n🔗 Linking configuration files for $SHELL_TYPE shell..."
 case "$SHELL_TYPE" in
     "zsh")
+        # Make sure .zshrc exists in the dotfiles directory
+        if [[ ! -f "$DOTFILES_DIR/.zshrc" ]]; then
+            echo "Creating .zshrc in dotfiles directory..."
+            cp "$DOTFILES_DIR/.zshrc" "$DOTFILES_DIR/.zshrc" 2>/dev/null || 
+            cp "/Users/v1p3r/Developer/homeLab_setup/dotfiles/.zshrc" "$DOTFILES_DIR/.zshrc" 2>/dev/null ||
+            {
+                # Create a basic .zshrc if it doesn't exist
+                echo "# Basic .zshrc created by install.sh" > "$DOTFILES_DIR/.zshrc"
+                echo "" >> "$DOTFILES_DIR/.zshrc"
+                echo "# Set locale settings" >> "$DOTFILES_DIR/.zshrc"
+                echo "export LANG=\"en_GB.UTF-8\"" >> "$DOTFILES_DIR/.zshrc"
+                echo "export LC_ALL=\"en_GB.UTF-8\"" >> "$DOTFILES_DIR/.zshrc"
+                echo "" >> "$DOTFILES_DIR/.zshrc"
+                echo "# Oh My Zsh installation path" >> "$DOTFILES_DIR/.zshrc"
+                echo "export ZSH=\"\$HOME/.oh-my-zsh\"" >> "$DOTFILES_DIR/.zshrc"
+                echo "" >> "$DOTFILES_DIR/.zshrc"
+                echo "# Set ZSH theme" >> "$DOTFILES_DIR/.zshrc"
+                echo "ZSH_THEME=\"spaceship\"" >> "$DOTFILES_DIR/.zshrc"
+                echo "" >> "$DOTFILES_DIR/.zshrc"
+                echo "# Load Oh My Zsh" >> "$DOTFILES_DIR/.zshrc"
+                echo "source \$ZSH/oh-my-zsh.sh" >> "$DOTFILES_DIR/.zshrc"
+                echo "" >> "$DOTFILES_DIR/.zshrc"
+                echo "# Load common aliases and functions" >> "$DOTFILES_DIR/.zshrc"
+                echo "if [[ -f \"\$HOME/.dotfiles/shell/common.sh\" ]]; then" >> "$DOTFILES_DIR/.zshrc"
+                echo "  source \"\$HOME/.dotfiles/shell/common.sh\"" >> "$DOTFILES_DIR/.zshrc"
+                echo "fi" >> "$DOTFILES_DIR/.zshrc"
+                echo "" >> "$DOTFILES_DIR/.zshrc"
+                echo "# Load Spaceship configuration if available" >> "$DOTFILES_DIR/.zshrc"
+                echo "[[ -f \"\$HOME/.spaceshiprc.zsh\" ]] && source \"\$HOME/.spaceshiprc.zsh\"" >> "$DOTFILES_DIR/.zshrc"
+            }
+        fi
+        
+        # Now create the symlink
         ln -sf "$DOTFILES_DIR/.zshrc" "$HOME/.zshrc"
+        
         # Install Oh My Zsh if not already installed
         if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
             echo -e "\n🎩 Installing Oh My Zsh..."
@@ -280,12 +339,21 @@ case "$SHELL_TYPE" in
         if [[ ! -d "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt" ]]; then
             git clone https://github.com/spaceship-prompt/spaceship-prompt.git "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt" --depth=1
             ln -sf "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt/spaceship.zsh-theme" "$HOME/.oh-my-zsh/custom/themes/spaceship.zsh-theme"
-            # Update .zshrc to use Spaceship theme
-            sed -i.bak 's/ZSH_THEME=".*"/ZSH_THEME="spaceship"/g' "$HOME/.zshrc"
-            # Remove Starship initialization if present
-            sed -i.bak '/starship init zsh/d' "$HOME/.zshrc"
+            
+            # Update .zshrc to use Spaceship theme if it exists
+            if [[ -f "$HOME/.zshrc" ]]; then
+                sed -i.bak 's/ZSH_THEME=".*"/ZSH_THEME="spaceship"/g' "$HOME/.zshrc" || echo "Failed to update ZSH_THEME"
+                # Remove Starship initialization if present
+                sed -i.bak '/starship init zsh/d' "$HOME/.zshrc" || echo "Failed to remove starship init"
+            fi
+            
+            # Link spaceship config
+            ln -sf "$DOTFILES_DIR/.spaceshiprc.zsh" "$HOME/.spaceshiprc.zsh"
+            
             echo "✅ Installed Spaceship prompt for Zsh"
         else
+            # Link spaceship config even if already installed
+            ln -sf "$DOTFILES_DIR/.spaceshiprc.zsh" "$HOME/.spaceshiprc.zsh"
             echo "✅ Spaceship prompt already installed for Zsh"
         fi
         ;;
