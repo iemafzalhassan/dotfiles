@@ -436,3 +436,33 @@ esac
 echo -e "\n✅ Setup completed successfully for $SHELL_TYPE shell!"
 echo -e "🚀 Enjoy your customized terminal experience!"
 
+# Make sure eza is installed and configured
+echo -e "\n🎨 Configuring file icons..."
+if command -v eza &>/dev/null; then
+    echo "✅ eza is installed, configuring icons"
+    # Update aliases in common.sh to use eza with icons
+    if [[ -f "$DOTFILES_DIR/shell/common.sh" ]]; then
+        sed -i.bak 's/alias ls="ls"/alias ls="eza --icons=always"/g' "$DOTFILES_DIR/shell/common.sh" 2>/dev/null || true
+        sed -i.bak 's/alias ll="ls -alh"/alias ll="eza -la --icons=always"/g' "$DOTFILES_DIR/shell/common.sh" 2>/dev/null || true
+        sed -i.bak 's/alias la="ls -A"/alias la="eza -a --icons=always"/g' "$DOTFILES_DIR/shell/common.sh" 2>/dev/null || true
+        sed -i.bak 's/alias l="ls"/alias l="eza --icons=always"/g' "$DOTFILES_DIR/shell/common.sh" 2>/dev/null || true
+    fi
+else
+    echo "⚠️ eza is not installed, installing now..."
+    if [[ "$PKG_MANAGER" == "brew" ]]; then
+        brew install eza
+    elif [[ "$PKG_MANAGER" == "apt" ]]; then
+        sudo apt install -y eza
+    elif [[ "$PKG_MANAGER" == "dnf" ]]; then
+        sudo dnf install -y eza
+    elif [[ "$PKG_MANAGER" == "pacman" ]]; then
+        sudo pacman -S --noconfirm eza
+    fi
+    
+    if command -v eza &>/dev/null; then
+        echo "✅ eza installed successfully"
+    else
+        echo "⚠️ Failed to install eza, falling back to ls"
+    fi
+fi
+

@@ -2,9 +2,10 @@
 # Common shell configuration for all shells
 
 # Aliases
-alias ll="ls -alh"
-alias la="ls -A"
-alias l="ls"
+alias ll="eza -la --icons=always"
+alias la="eza -a --icons=always"
+alias l="eza --icons=always"
+alias ls="eza --icons=always"
 alias ..="cd .."
 alias ...="cd ../.."
 alias ....="cd ../../.."
@@ -197,11 +198,11 @@ magic_enter() {
   if [[ -z $BUFFER ]]; then
     echo ""
     if git rev-parse --is-inside-work-tree &>/dev/null; then
-      echo "$(ls -la --color=auto)"
+      echo "$(eza --icons=always -la)"
       echo ""
       echo "$(git status -u .)"
     else
-      echo "$(ls -la --color=auto)"
+      echo "$(eza --icons=always -la)"
     fi
     echo ""
     return 0

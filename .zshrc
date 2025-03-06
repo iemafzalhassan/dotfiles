@@ -47,6 +47,10 @@ alias zshconfig="vim ~/.zshrc"
 alias ohmyzsh="vim ~/.oh-my-zsh"
 alias cd="z"
 alias ls="eza --icons=always"
+alias ll="eza -la --icons=always"
+alias la="eza -a --icons=always"
+alias lt="eza -T --icons=always"
+alias lg="eza -la --git --icons=always"
 
 # Enable zoxide for smarter navigation
 eval "$(zoxide init zsh)"
@@ -86,3 +90,23 @@ fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 # [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# Enable magic-enter functionality
+# Shows directory listing and git status when pressing Enter on empty line
+function magic-enter() {
+  if [[ -z $BUFFER ]]; then
+    echo ""
+    if git rev-parse --is-inside-work-tree &>/dev/null; then
+      echo "$(eza --icons=always -la)"
+      echo ""
+      echo "$(git status -u .)"
+    else
+      echo "$(eza --icons=always -la)"
+    fi
+    zle accept-line
+  else
+    zle accept-line
+  fi
+}
+zle -N magic-enter
+bindkey "^M" magic-enter
