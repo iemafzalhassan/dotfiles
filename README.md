@@ -5,12 +5,14 @@ This script automates the installation and configuration of essential tools, dot
 ## Features
 - Detects operating system and package manager
 - Installs necessary CLI tools (btop, tldr, eza, fzf, etc.)
-- Installs and configures Homebrew if needed
-- Sets up Oh My Bash for Bash users
-- Sets up Oh My Zsh for Zsh users
+- Installs and configures Homebrew on all Unix/Linux systems
+- Sets up Oh My Bash for Bash users with enhanced plugins
+- Sets up Oh My Zsh for Zsh users with comprehensive plugins
+- Sets up Fish shell with Fisher plugin manager and equivalent plugins
 - Clones and updates dotfiles from the repository
 - Symlinks shell configuration files for Bash, Zsh, Fish, and Elvish
-- Configures Starship prompt for supported shells
+- Configures Spaceship prompt for all supported shells (Starship for Elvish)
+- Displays file and folder icons in terminal listings
 
 ## Installation
 ### Prerequisites

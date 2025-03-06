@@ -17,12 +17,20 @@ OSH_THEME="font"
 # Load Oh My Bash
 source "$OSH/oh-my-bash.sh"
 
-# ✅ WORKING PLUGINS for Bash
+# Expand Bash plugins to match Zsh functionality
 plugins=(
   git
   aws
   docker
+  docker-compose
+  kubectl
   helm
+  terraform
+  golang
+  node
+  python
+  history
+  extract
 )
 
 # Load Plugins (Only if they exist)
@@ -32,15 +40,18 @@ for plugin in "${plugins[@]}"; do
   fi
 done
 
-# ✅ Aliases
-alias ll="ls -alh --color=auto"
-alias k="kubectl"
-alias tf="terraform"
-alias tfi="terraform init"
-alias tfp="terraform plan"
-alias tfa="terraform apply -auto-approve"
-alias tfd="terraform destroy"
-alias vi="vim"
+# Load common aliases and functions
+if [ -f "$HOME/.dotfiles/shell/common.sh" ]; then
+  source "$HOME/.dotfiles/shell/common.sh"
+fi
+
+# Bash-specific aliases
+alias ll="eza -la --icons=always"
+alias la="eza -a --icons=always"
+alias ls="eza --icons=always"
+alias lt="eza -T --icons=always"
+alias lg="eza -la --git --icons=always"
+alias bashconfig="vim ~/.bashrc"
 
 # ✅ Smart Navigation (Using Zoxide)
 if command -v zoxide &> /dev/null; then
@@ -68,16 +79,59 @@ else
   export EDITOR='vi'
 fi
 
-# ✅ Use Powerline Font (No Powerline Shell)
-export PS1="\[\e[0;36m\]\u@\h \[\e[1;33m\]\w\[\e[0m\] $ "
-
-# ✅ Ensure Powerline Fonts Work (Only for WSL/Linux Terminal)
-if command -v fc-list &> /dev/null && fc-list | grep -iq "Powerline"; then
-  echo "✔ Powerline fonts detected!"
-else
-  echo "❌ Powerline fonts missing! Install them for better symbols."
+# Add more Bash-specific enhancements
+# Enable bash-completion if available
+if [[ -f "$HOMEBREW_PREFIX/etc/bash_completion" ]]; then
+  source "$HOMEBREW_PREFIX/etc/bash_completion"
+elif [[ -f /etc/bash_completion ]]; then
+  source /etc/bash_completion
 fi
 
-eval "$(starship init bash)"
+# Enhanced history settings
+export HISTSIZE=10000
+export HISTFILESIZE=10000
+export HISTCONTROL=ignoreboth:erasedups
+shopt -s histappend
+PROMPT_COMMAND="history -a; history -c; history -r; $PROMPT_COMMAND"
+
+# Better directory navigation
+shopt -s autocd
+shopt -s dirspell
+shopt -s cdspell
+
+# Enable magic-enter functionality
+# Shows directory listing and git status when pressing Enter on empty line
+magic_enter_cmd() {
+  if [[ -z "$READLINE_LINE" ]]; then
+    echo ""
+    if git rev-parse --is-inside-work-tree &>/dev/null; then
+      echo "$(eza --icons=always -la)"
+      echo ""
+      echo "$(git status -u .)"
+    else
+      echo "$(eza --icons=always -la)"
+    fi
+    echo ""
+    READLINE_LINE=""
+    READLINE_POINT=0
+    return 0
+  fi
+  return 1
+}
+
+bind -x '"\C-m": "magic_enter_cmd || bash_enter_cmd"'
+bash_enter_cmd() {
+  if [[ $magic_enter_cmd_rv -eq 1 ]]; then
+    echo
+  fi
+}
+
+# Initialize starship prompt - REMOVE THIS LINE
+# eval "$(starship init bash)"
+
+# Initialize Spaceship prompt (if not already added by the install script)
+if [[ -d "$HOME/.bash-spaceship-prompt" ]]; then
+  eval "$($HOME/.bash-spaceship-prompt/spaceship-prompt.bash)"
+fi
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"

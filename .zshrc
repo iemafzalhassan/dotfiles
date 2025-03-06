@@ -1,9 +1,9 @@
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
+# if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+#   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+# fi
 
 # Set locale settings
 export LANG="en_GB.UTF-8"
@@ -19,8 +19,9 @@ fi
 # Oh My Zsh installation path
 export ZSH="$HOME/.oh-my-zsh"
 
-# Load Oh My Zsh
-source $ZSH/oh-my-zsh.sh
+# Set ZSH theme
+# Make sure this line is present and not commented out
+ZSH_THEME="spaceship"
 
 # Plugins
 plugins=(
@@ -30,13 +31,18 @@ plugins=(
   tldr extract encode64
 )
 
-# Load Oh My Zsh plugins
+# Load Oh My Zsh
 source $ZSH/oh-my-zsh.sh
 
 # Preferred editor
 export EDITOR='vim'
 
-# Aliases
+# Load common aliases and functions
+if [[ -f "$HOME/.dotfiles/shell/common.sh" ]]; then
+  source "$HOME/.dotfiles/shell/common.sh"
+fi
+
+# Zsh-specific aliases
 alias zshconfig="vim ~/.zshrc"
 alias ohmyzsh="vim ~/.oh-my-zsh"
 alias cd="z"
@@ -59,14 +65,6 @@ bindkey '^[[A' history-search-backward
 bindkey '^[[B' history-search-forward
 bindkey '^R' history-incremental-search-backward
 
-# Terraform shortcuts
-alias tf="terraform"
-alias tfi="terraform init"
-alias tfp="terraform plan"
-alias tfaa="terraform apply -auto-approve"
-alias tfd="terraform destroy"
-alias tfa="terraform apply"
-
 # Set default editor based on SSH session
 if [[ -n $SSH_CONNECTION ]]; then
   export EDITOR='vim'
@@ -74,10 +72,17 @@ else
   export EDITOR='vi'
 fi
 
-# Load Powerlevel10k if installed
-if [[ -f "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme" ]]; then
-  source "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme"
-fi
+# Load Spaceship configuration if available
+[[ -f "$HOME/.spaceshiprc.zsh" ]] && source "$HOME/.spaceshiprc.zsh"
+
+# Comment out Starship initialization
+# Remove any Starship initialization if present
+# eval "$(starship init zsh)"
+
+# Comment out Powerlevel10k
+# if [[ -f "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme" ]]; then
+#   source "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme"
+# fi
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+# [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
