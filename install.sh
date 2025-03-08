@@ -25,7 +25,7 @@ echo -e "║                                                           ║"
 echo -e "╚═══════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 echo -e "${CYAN}>> dotfile Setup - Terminal Environment Installer <<${NC}\n"
-echo -e "${RED}>>    Author: Md. Afzal Hassan Ehsani <<${NC}\n"
+echo -e "${GREEN}>>   Author: Md. Afzal Hassan Ehsani   <<${NC}\n"
 
 # Detect Operating System
 OS="$(uname -s)"
@@ -249,34 +249,11 @@ fi
 SHELL_TYPE="$SELECTED_SHELL"
 echo -e "\n${BLUE}[*]${NC} Setting up ${YELLOW}$SHELL_TYPE${NC} environment..."
 
-if [[ "$SHELL_TYPE" == "zsh" ]]; then
-    tools+=("zsh-autosuggestions" "zsh-syntax-highlighting" "zsh-history-substring-search")
-elif [[ "$SHELL_TYPE" == "bash" ]]; then
-    # Add Bash-specific tools to match Zsh functionality
-    if [[ "$PKG_MANAGER" == "brew" ]]; then
-        tools+=("bash-completion@2" "bash-git-prompt")
-    elif [[ "$PKG_MANAGER" == "apt" ]]; then
-        sudo apt install -y bash-completion bash-git-prompt
-    elif [[ "$PKG_MANAGER" == "dnf" ]]; then
-        sudo dnf install -y bash-completion bash-git-prompt
-    elif [[ "$PKG_MANAGER" == "pacman" ]]; then
-        sudo pacman -S --noconfirm bash-completion bash-git-prompt
-    fi
-elif [[ "$SHELL_TYPE" == "fish" ]]; then
-    # Fish has many features built-in, but we'll add Fisher plugin manager
-    if ! fish -c "functions -q fisher" &>/dev/null; then
-        fish -c "curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher"
-        # Install useful Fisher plugins
-        fish -c "fisher install PatrickF1/fzf.fish"
-        fish -c "fisher install jethrokuan/z"
-        fish -c "fisher install edc/bass"
-        fish -c "fisher install franciscolourenco/done"
-    fi
-fi
-
-echo -e "\n🛠️  Installing selected tools..."
+# Install the common tools
+echo -e "\n${BLUE}[*]${NC} Installing common tools..."
 for tool in "${tools[@]}"; do
     if ! command -v "$tool" &>/dev/null; then
+        echo -e "${CYAN}[+]${NC} Installing $tool..."
         if [[ "$PKG_MANAGER" == "brew" ]]; then
             brew install "$tool"
         elif [[ "$PKG_MANAGER" == "apt" ]]; then
@@ -286,1241 +263,259 @@ for tool in "${tools[@]}"; do
         elif [[ "$PKG_MANAGER" == "pacman" ]]; then
             sudo pacman -S --noconfirm "$tool"
         fi
-        
-        if command -v "$tool" &>/dev/null; then
-            echo "✔️  Installed $tool successfully."
-        else
-            echo "⚠️  Failed to install $tool."
-        fi
     else
-        echo "✅ $tool is already installed. Skipping..."
+        echo -e "${GREEN}[✓]${NC} $tool is already installed"
     fi
 done
 
-# Create necessary directories only for the selected shell
-mkdir -p "$HOME/.dotfiles/shell"
-case "$SHELL_TYPE" in
-    "zsh")
-        # Only create Zsh-specific directories
-        ;;
-    "bash")
-        # Only create Bash-specific directories
-        ;;
-    "fish")
-        mkdir -p "$HOME/.config/fish"
-        ;;
-    "elvish")
-        mkdir -p "$HOME/.config/elvish"
-        ;;
-esac
+# Define dotfiles directory
+DOTFILES_DIR="$(pwd)"
 
-# Clone dotfiles repository
-echo -e "\n🔄 Updating dotfiles repository..."
-DOTFILES_REPO="https://github.com/iemafzalhassan/dotfiles.git"
-DOTFILES_DIR="$HOME/.dotfiles"
-
-# Check if we're already in the dotfiles directory
-if [[ "$(pwd)" == *"dotfiles"* ]]; then
-    # We're already in the dotfiles directory, copy to ~/.dotfiles
-    echo "Copying current directory to $DOTFILES_DIR..."
-    mkdir -p "$DOTFILES_DIR"
-    cp -R ./* "$DOTFILES_DIR/"
-    cp -R ./.* "$DOTFILES_DIR/" 2>/dev/null || true  # Copy hidden files too
-elif [[ -d "$DOTFILES_DIR" ]]; then
-    git -C "$DOTFILES_DIR" pull || echo "Not a git repository, skipping pull"
-else
-    git clone "$DOTFILES_REPO" "$DOTFILES_DIR" || 
-    echo "Failed to clone repository, copying local files instead" &&
-    mkdir -p "$DOTFILES_DIR" &&
-    cp -R ./* "$DOTFILES_DIR/" &&
-    cp -R ./.* "$DOTFILES_DIR/" 2>/dev/null || true
-fi
-
-# Create shell directory if it doesn't exist
-mkdir -p "$DOTFILES_DIR/shell"
-
-# Copy common.sh to the shell directory if it doesn't exist
-if [[ ! -f "$DOTFILES_DIR/shell/common.sh" ]]; then
-    if [[ -f "./shell/common.sh" ]]; then
-        cp "./shell/common.sh" "$DOTFILES_DIR/shell/common.sh"
-    elif [[ -f "./common.sh" ]]; then
-        cp "./common.sh" "$DOTFILES_DIR/shell/common.sh"
-    else
-        # Create a basic common.sh if it doesn't exist
-        echo "#!/bin/bash" > "$DOTFILES_DIR/shell/common.sh"
-        echo "# Common shell configuration for all shells" >> "$DOTFILES_DIR/shell/common.sh"
-        echo "# Created automatically by install.sh" >> "$DOTFILES_DIR/shell/common.sh"
-        echo "" >> "$DOTFILES_DIR/shell/common.sh"
-        echo "# Aliases" >> "$DOTFILES_DIR/shell/common.sh"
-        echo "alias ll=\"ls -alh\"" >> "$DOTFILES_DIR/shell/common.sh"
-        echo "alias la=\"ls -A\"" >> "$DOTFILES_DIR/shell/common.sh"
-        echo "alias l=\"ls\"" >> "$DOTFILES_DIR/shell/common.sh"
+# Add code to copy the appropriate shell configuration file based on selected shell
+if [[ "$SHELL_TYPE" == "zsh" ]]; then
+    echo -e "\n${BLUE}[*]${NC} Setting up Zsh configuration..."
+    
+    # Install spaceship prompt if not already installed
+    if [[ ! -d "$ZSH/custom/themes/spaceship-prompt" ]]; then
+        echo -e "${CYAN}[+]${NC} Installing Spaceship prompt..."
+        git clone https://github.com/spaceship-prompt/spaceship-prompt.git "$ZSH/custom/themes/spaceship-prompt" --depth=1
+        ln -sf "$ZSH/custom/themes/spaceship-prompt/spaceship.zsh-theme" "$ZSH/custom/themes/spaceship.zsh-theme"
     fi
+    
+    # Install fast-syntax-highlighting if not already installed
+    if [[ ! -d "$HOME/.fast-syntax-highlighting" ]]; then
+        echo -e "${CYAN}[+]${NC} Installing fast-syntax-highlighting..."
+        git clone https://github.com/zdharma-continuum/fast-syntax-highlighting.git "$HOME/.fast-syntax-highlighting"
+    fi
+    
+    # Install zsh-defer if not already installed
+    if [[ ! -d "$HOME/.zsh-defer" ]]; then
+        echo -e "${CYAN}[+]${NC} Installing zsh-defer for faster shell startup..."
+        mkdir -p "$HOME/.zsh-defer"
+        curl -fsSL https://raw.githubusercontent.com/romkatv/zsh-defer/master/zsh-defer.plugin.zsh > "$HOME/.zsh-defer/zsh-defer.plugin.zsh"
+    fi
+    
+    # Copy .zshrc from dotfiles to home directory
+    echo -e "${CYAN}[+]${NC} Copying .zshrc to home directory..."
+    cp "$DOTFILES_DIR/.zshrc" "$HOME/.zshrc"
+    
+    # Set ZSH_THEME to spaceship in .zshrc if not already set
+    if ! grep -q "ZSH_THEME=\"spaceship\"" "$HOME/.zshrc"; then
+        sed -i.bak 's/^ZSH_THEME=.*$/ZSH_THEME="spaceship"/' "$HOME/.zshrc" || true
+    fi
+    
+    echo -e "${GREEN}[✓]${NC} Zsh configuration complete!"
+
+elif [[ "$SHELL_TYPE" == "bash" ]]; then
+    echo -e "\n${BLUE}[*]${NC} Setting up Bash configuration..."
+    
+    # Install bash-spaceship-prompt if not already installed
+    if [[ ! -d "$HOME/.bash-spaceship-prompt" ]]; then
+        echo -e "${CYAN}[+]${NC} Installing Spaceship prompt for Bash..."
+        git clone https://github.com/spaceship-prompt/spaceship-prompt.git "$HOME/.bash-spaceship-prompt" --depth=1
+    fi
+    
+    # Copy .bashrc from dotfiles to home directory
+    echo -e "${CYAN}[+]${NC} Copying .bashrc to home directory..."
+    cp "$DOTFILES_DIR/.bashrc" "$HOME/.bashrc"
+    
+    echo -e "${GREEN}[✓]${NC} Bash configuration complete!"
+
+elif [[ "$SHELL_TYPE" == "fish" ]]; then
+    echo -e "\n${BLUE}[*]${NC} Setting up Fish configuration..."
+    
+    # Create fish config directory if it doesn't exist
+    mkdir -p "$HOME/.config/fish"
+    
+    # Copy config.fish from dotfiles to fish config directory
+    echo -e "${CYAN}[+]${NC} Copying config.fish to ~/.config/fish/..."
+    cp "$DOTFILES_DIR/config.fish" "$HOME/.config/fish/config.fish"
+    
+    # Install spaceship prompt for fish if not already installed
+    if ! fish -c "functions -q spaceship" &>/dev/null; then
+        echo -e "${CYAN}[+]${NC} Installing Spaceship prompt for Fish..."
+        fish -c "fisher install spaceship-prompt/spaceship-prompt"
+    fi
+    
+    echo -e "${GREEN}[✓]${NC} Fish configuration complete!"
+
+elif [[ "$SHELL_TYPE" == "elvish" ]]; then
+    echo -e "\n${BLUE}[*]${NC} Setting up Elvish configuration..."
+    
+    # Create elvish config directory if it doesn't exist
+    mkdir -p "$HOME/.elvish"
+    
+    # Copy config.elvish from dotfiles to elvish config directory
+    echo -e "${CYAN}[+]${NC} Copying config.elvish to ~/.elvish/rc.elv..."
+    cp "$DOTFILES_DIR/config.elvish" "$HOME/.elvish/rc.elv"
+    
+    # Install starship prompt if not already installed
+    if ! command -v starship &>/dev/null; then
+        echo -e "${CYAN}[+]${NC} Installing Starship prompt for Elvish..."
+        if [[ "$PKG_MANAGER" == "brew" ]]; then
+            brew install starship
+        else
+            curl -sS https://starship.rs/install.sh | sh
+        fi
+    fi
+    
+    echo -e "${GREEN}[✓]${NC} Elvish configuration complete!"
 fi
 
-# Link only the shell configuration for the detected shell
-echo -e "\n🔗 Linking configuration files for $SHELL_TYPE shell..."
-case "$SHELL_TYPE" in
-    "zsh")
-        # Make sure .zshrc exists in the dotfiles directory
-        # Create a basic .spaceshiprc.zsh if it doesn't exist
-        if [[ ! -f "$DOTFILES_DIR/.spaceshiprc.zsh" ]]; then
-        echo "Creating .spaceshiprc.zsh in dotfiles directory..."
-        cat > "$DOTFILES_DIR/.spaceshiprc.zsh" << 'EOL'
-        # Spaceship ZSH Configuration
-        
-        # Display time
-        SPACESHIP_TIME_SHOW=true
-        SPACESHIP_TIME_COLOR="yellow"
-        SPACESHIP_TIME_FORMAT="%T"
-        
-        # Display username always
-        SPACESHIP_USER_SHOW=always
-        SPACESHIP_USER_COLOR="green"
-        
-        # Display hostname always
-        SPACESHIP_HOST_SHOW=always
-        SPACESHIP_HOST_COLOR="cyan"
-        
-        # Display current directory
-        SPACESHIP_DIR_TRUNC=0
-        SPACESHIP_DIR_TRUNC_REPO=false
-        SPACESHIP_DIR_COLOR="blue"
-        
-        # Git settings
-        SPACESHIP_GIT_SHOW=true
-        SPACESHIP_GIT_PREFIX="on "
-        SPACESHIP_GIT_SUFFIX=""
-        SPACESHIP_GIT_BRANCH_COLOR="magenta"
-        SPACESHIP_GIT_STATUS_COLOR="red"
-        
-        # Customize prompt
-        SPACESHIP_PROMPT_ADD_NEWLINE=true
-        SPACESHIP_PROMPT_SEPARATE_LINE=true
-        SPACESHIP_PROMPT_FIRST_PREFIX_SHOW=false
-        SPACESHIP_PROMPT_PREFIXES_SHOW=true
-        SPACESHIP_PROMPT_SUFFIXES_SHOW=true
-        SPACESHIP_PROMPT_DEFAULT_PREFIX="via "
-        SPACESHIP_PROMPT_DEFAULT_SUFFIX=" "
-        
-        # Customize prompt order
-        SPACESHIP_PROMPT_ORDER=(
-        time          # Time stamps section
-        user          # Username section
-        host          # Hostname section
-        dir           # Current directory section
-        git           # Git section (git_branch + git_status)
-        package       # Package version
-        node          # Node.js section
-        ruby          # Ruby section
-        python        # Python section
-        golang        # Go section
-        docker        # Docker section
-        line_sep      # Line break
-        char          # Prompt character
-        )
-        
-        # Customize right prompt
-        SPACESHIP_RPROMPT_ORDER=(
-        exec_time     # Execution time
-        jobs          # Background jobs indicator
-        exit_code     # Exit code section
-        )
-        EOL
-        fi
-        
-        # Create a basic starship.toml for Elvish if it doesn't exist
-        if [[ "$SHELL_TYPE" == "elvish" ]] && [[ ! -f "$DOTFILES_DIR/starship.toml" ]]; then
-        echo "Creating starship.toml for Elvish in dotfiles directory..."
-        mkdir -p "$DOTFILES_DIR"
-        cat > "$DOTFILES_DIR/starship.toml" << 'EOL'
-        # Starship Configuration for Elvish
-        
-        # Get editor completions based on the config schema
-        "$schema" = 'https://starship.rs/config-schema.json'
-        
-        # Inserts a blank line between shell prompts
-        add_newline = true
-        
-        # Replace the "❯" symbol in the prompt with "➜"
-        [character]
-        success_symbol = "[➜](bold green)"
-        error_symbol = "[✗](bold red)"
-        
-        # Disable the package module, hiding it from the prompt completely
-        [package]
-        disabled = true
-        
-        # Display time
-        [time]
-        disabled = false
-        format = '[$time]($style) '
-        time_format = "%T"
-        style = "yellow"
-        
-        # Display username always
-        [username]
-        style_user = "green"
-        style_root = "red"
-        format = "[$user]($style) "
-        disabled = false
-        show_always = true
-        
-        # Display hostname always
-        [hostname]
-        ssh_only = false
-        format = "[@$hostname]($style) "
-        style = "cyan"
-        disabled = false
-        
-        # Display current directory
-        [directory]
-        truncation_length = 0
-        truncate_to_repo = false
-        style = "blue"
-        
-        # Git settings
-        [git_branch]
-        format = "on [$symbol$branch]($style) "
-        style = "magenta"
-        
-        [git_status]
-        style = "red"
-        EOL
-        fi
-        
-        # Create a basic config.fish if it doesn't exist
-        if [[ "$SHELL_TYPE" == "fish" ]] && [[ ! -f "$DOTFILES_DIR/config.fish" ]]; then
-        echo "Creating config.fish in dotfiles directory..."
-        mkdir -p "$DOTFILES_DIR"
-        cat > "$DOTFILES_DIR/config.fish" << 'EOL'
-        # Fish shell configuration
-        
-        # Set locale settings
-        set -x LANG "en_GB.UTF-8"
-        set -x LC_ALL "en_GB.UTF-8"
-        
-        # Load common aliases and functions
-        if test -f "$HOME/.dotfiles/shell/common.sh"
-        bass source "$HOME/.dotfiles/shell/common.sh"
-        end
-        
-        # Initialize Spaceship prompt
-        if type -q spaceship_prompt
-        function fish_prompt
-        spaceship_prompt
-        end
-        
-        # Use eza instead of ls if available
-        if type -q eza
-        alias ls="eza --icons=always"
-        alias ll="eza -la --icons=always"
-        alias la="eza -a --icons=always"
-        alias lt="eza -T --icons=always"
-        alias lg="eza -la --git --icons=always"
-        end
-        
-        # Navigation shortcuts
-        alias ..="cd .."
-        alias ...="cd ../.."
-        alias ....="cd ../../.."
-        EOL
-        fi
-        
-        # Create a basic .bashrc if it doesn't exist
-        if [[ "$SHELL_TYPE" == "bash" ]] && [[ ! -f "$DOTFILES_DIR/.bashrc" ]]; then
-        echo "Creating .bashrc in dotfiles directory..."
-        cat > "$DOTFILES_DIR/.bashrc" << 'EOL'
-        # Basic .bashrc created by install.sh
-        
-        # Set locale settings
-        export LANG="en_GB.UTF-8"
-        export LC_ALL="en_GB.UTF-8"
-        
-        # Load common aliases and functions
-        if [[ -f "$HOME/.dotfiles/shell/common.sh" ]]; then
-        source "$HOME/.dotfiles/shell/common.sh"
-        fi
-        
-        # Load Spaceship prompt if available
-        if [[ -d "$HOME/.bash-spaceship-prompt" ]]; then
-        eval "$($HOME/.bash-spaceship-prompt/spaceship-prompt.bash)"
-        fi
-        
-        # Enable bash-completion if installed
-        if [[ -f /usr/local/etc/bash_completion ]]; then
-        source /usr/local/etc/bash_completion
-        elif [[ -f /etc/bash_completion ]]; then
-        source /etc/bash_completion
-        fi
-        
-        # Enable git-prompt if installed
-        if [[ -f /usr/local/etc/bash_completion.d/git-prompt.sh ]]; then
-        source /usr/local/etc/bash_completion.d/git-prompt.sh
-        elif [[ -f /etc/bash_completion.d/git-prompt ]]; then
-        source /etc/bash_completion.d/git-prompt
-        fi
-        
-        # History settings
-        HISTCONTROL=ignoreboth
-        HISTSIZE=1000
-        HISTFILESIZE=2000
-        shopt -s histappend
-        
-        # Check window size after each command
-        shopt -s checkwinsize
-        
-        # Make less more friendly for non-text input files
-        [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
-        
-        # Set a fancy prompt
-        PS1='\[\033[01;32m\]\u\[\033[00m\] \[\033[01;34m\]@\[\033[00m\] \[\033[01;36m\]\h\[\033[00m\] \[\033[01;33m\]\t\[\033[00m\] \[\033[01;35m\]\w\[\033[00m\]\n\[\033[01;32m\]➜\[\033[00m\] '
-        EOL
-        fi
-        
-        # Create a basic config.elvish if it doesn't exist
-        if [[ "$SHELL_TYPE" == "elvish" ]] && [[ ! -f "$DOTFILES_DIR/config.elvish" ]]; then
-        echo "Creating config.elvish in dotfiles directory..."
-        mkdir -p "$DOTFILES_DIR"
-        cat > "$DOTFILES_DIR/config.elvish" << 'EOL'
-        # Elvish shell configuration
-        
-        # Set locale settings
-        set-env LANG "en_GB.UTF-8"
-        set-env LC_ALL "en_GB.UTF-8"
-        
-        # Initialize Starship prompt
-        eval (starship init elvish)
-        
-        # Aliases
-        fn ls [@a]{ e:eza --icons=always $@a }
-        fn ll [@a]{ e:eza -la --icons=always $@a }
-        fn la [@a]{ e:eza -a --icons=always $@a }
-        fn lt [@a]{ e:eza -T --icons=always $@a }
-        fn lg [@a]{ e:eza -la --git --icons=always $@a }
-        
-        # Navigation shortcuts
-        fn .. { cd .. }
-        fn ... { cd ../.. }
-        fn .... { cd ../../.. }
-        EOL
-        fi
-        
-        # Add a check for terminal color support
-        echo -e "\n${BLUE}[*]${NC} Checking terminal color support..."
-        if [[ "$TERM" == "xterm-256color" || "$TERM" == "screen-256color" || "$TERM" == "tmux-256color" ]]; then
-        echo -e "${GREEN}[✓]${NC} Your terminal supports 256 colors"
-        else
-        echo -e "${YELLOW}[!]${NC} Your terminal might not support 256 colors"
-        echo -e "${YELLOW}[!]${NC} For best experience, set your TERM to xterm-256color"
-        
-        # Add TERM setting to shell config
-        case "$SHELL_TYPE" in
-        "zsh")
-        if ! grep -q "TERM=" "$HOME/.zshrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.zshrc"
-        fi
-        ;;
-        "bash")
-        if ! grep -q "TERM=" "$HOME/.bashrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.bashrc"
-        fi
-        ;;
-        "fish")
-        if ! grep -q "TERM=" "$HOME/.config/fish/config.fish"; then
-        echo 'set -x TERM "xterm-256color"' >> "$HOME/.config/fish/config.fish"
-        fi
-        ;;
-        esac
-        fi
-        
-        # Create a README.md file with instructions
-        echo -e "\n${BLUE}[*]${NC} Creating README.md with usage instructions..."
-        cat > "$DOTFILES_DIR/README.md" << 'EOL'
-        # Dotfiles
-        
-        This repository contains my personal dotfiles for various shells and tools.
-        
-        ## Installation
-        
-        To install these dotfiles, run:
-        
-        ```bash
-        ./install.sh
-        ```
-        EOL
-        fi
-        fi
-        fi
-        fi
-        
-        # Create a basic config.fish if it doesn't exist
-        if [[ "$SHELL_TYPE" == "fish" ]] && [[ ! -f "$DOTFILES_DIR/config.fish" ]]; then
-        echo "Creating config.fish in dotfiles directory..."
-        mkdir -p "$DOTFILES_DIR"
-        cat > "$DOTFILES_DIR/config.fish" << 'EOL'
-        # Fish shell configuration
-        
-        # Set locale settings
-        set -x LANG "en_GB.UTF-8"
-        set -x LC_ALL "en_GB.UTF-8"
-        
-        # Load common aliases and functions
-        if test -f "$HOME/.dotfiles/shell/common.sh"
-        bass source "$HOME/.dotfiles/shell/common.sh"
-        end
-        
-        # Initialize Spaceship prompt
-        if type -q spaceship_prompt
-        function fish_prompt
-        spaceship_prompt
-        end
-        
-        # Use eza instead of ls if available
-        if type -q eza
-        alias ls="eza --icons=always"
-        alias ll="eza -la --icons=always"
-        alias la="eza -a --icons=always"
-        alias lt="eza -T --icons=always"
-        alias lg="eza -la --git --icons=always"
-        end
-        
-        # Navigation shortcuts
-        alias ..="cd .."
-        alias ...="cd ../.."
-        alias ....="cd ../../.."
-        EOL
-        fi
-        
-        # Create a basic .bashrc if it doesn't exist
-        if [[ "$SHELL_TYPE" == "bash" ]] && [[ ! -f "$DOTFILES_DIR/.bashrc" ]]; then
-        echo "Creating .bashrc in dotfiles directory..."
-        cat > "$DOTFILES_DIR/.bashrc" << 'EOL'
-        # Basic .bashrc created by install.sh
-        
-        # Set locale settings
-        export LANG="en_GB.UTF-8"
-        export LC_ALL="en_GB.UTF-8"
-        
-        # Load common aliases and functions
-        if [[ -f "$HOME/.dotfiles/shell/common.sh" ]]; then
-        source "$HOME/.dotfiles/shell/common.sh"
-        fi
-        
-        # Load Spaceship prompt if available
-        if [[ -d "$HOME/.bash-spaceship-prompt" ]]; then
-        eval "$($HOME/.bash-spaceship-prompt/spaceship-prompt.bash)"
-        fi
-        
-        # Enable bash-completion if installed
-        if [[ -f /usr/local/etc/bash_completion ]]; then
-        source /usr/local/etc/bash_completion
-        elif [[ -f /etc/bash_completion ]]; then
-        source /etc/bash_completion
-        fi
-        
-        # Enable git-prompt if installed
-        if [[ -f /usr/local/etc/bash_completion.d/git-prompt.sh ]]; then
-        source /usr/local/etc/bash_completion.d/git-prompt.sh
-        elif [[ -f /etc/bash_completion.d/git-prompt ]]; then
-        source /etc/bash_completion.d/git-prompt
-        fi
-        
-        # History settings
-        HISTCONTROL=ignoreboth
-        HISTSIZE=1000
-        HISTFILESIZE=2000
-        shopt -s histappend
-        
-        # Check window size after each command
-        shopt -s checkwinsize
-        
-        # Make less more friendly for non-text input files
-        [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
-        
-        # Set a fancy prompt
-        PS1='\[\033[01;32m\]\u\[\033[00m\] \[\033[01;34m\]@\[\033[00m\] \[\033[01;36m\]\h\[\033[00m\] \[\033[01;33m\]\t\[\033[00m\] \[\033[01;35m\]\w\[\033[00m\]\n\[\033[01;32m\]➜\[\033[00m\] '
-        EOL
-        fi
-        
-        # Create a basic config.elvish if it doesn't exist
-        if [[ "$SHELL_TYPE" == "elvish" ]] && [[ ! -f "$DOTFILES_DIR/config.elvish" ]]; then
-        echo "Creating config.elvish in dotfiles directory..."
-        mkdir -p "$DOTFILES_DIR"
-        cat > "$DOTFILES_DIR/config.elvish" << 'EOL'
-        # Elvish shell configuration
-        
-        # Set locale settings
-        set-env LANG "en_GB.UTF-8"
-        set-env LC_ALL "en_GB.UTF-8"
-        
-        # Initialize Starship prompt
-        eval (starship init elvish)
-        
-        # Aliases
-        fn ls [@a]{ e:eza --icons=always $@a }
-        fn ll [@a]{ e:eza -la --icons=always $@a }
-        fn la [@a]{ e:eza -a --icons=always $@a }
-        fn lt [@a]{ e:eza -T --icons=always $@a }
-        fn lg [@a]{ e:eza -la --git --icons=always $@a }
-        
-        # Navigation shortcuts
-        fn .. { cd .. }
-        fn ... { cd ../.. }
-        fn .... { cd ../../.. }
-        EOL
-        fi
-        
-        # Add a check for terminal color support
-        echo -e "\n${BLUE}[*]${NC} Checking terminal color support..."
-        if [[ "$TERM" == "xterm-256color" || "$TERM" == "screen-256color" || "$TERM" == "tmux-256color" ]]; then
-        echo -e "${GREEN}[✓]${NC} Your terminal supports 256 colors"
-        else
-        echo -e "${YELLOW}[!]${NC} Your terminal might not support 256 colors"
-        echo -e "${YELLOW}[!]${NC} For best experience, set your TERM to xterm-256color"
-        
-        # Add TERM setting to shell config
-        case "$SHELL_TYPE" in
-        "zsh")
-        if ! grep -q "TERM=" "$HOME/.zshrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.zshrc"
-        fi
-        ;;
-        "bash")
-        if ! grep -q "TERM=" "$HOME/.bashrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.bashrc"
-        fi
-        ;;
-        "fish")
-        if ! grep -q "TERM=" "$HOME/.config/fish/config.fish"; then
-        echo 'set -x TERM "xterm-256color"' >> "$HOME/.config/fish/config.fish"
-        fi
-        ;;
-        esac
-        fi
-        
-        # Create a README.md file with instructions
-        echo -e "\n${BLUE}[*]${NC} Creating README.md with usage instructions..."
-        cat > "$DOTFILES_DIR/README.md" << 'EOL'
-        # Dotfiles
-        
-        This repository contains my personal dotfiles for various shells and tools.
-        
-        ## Installation
-        
-        To install these dotfiles, run:
-        
-        ```bash
-        ./install.sh
-        ```
-        EOL
-        fi
-        fi
-        fi
-        fi
-        
-        # Add a check for terminal color support
-        echo -e "\n${BLUE}[*]${NC} Checking terminal color support..."
-        if [[ "$TERM" == "xterm-256color" || "$TERM" == "screen-256color" || "$TERM" == "tmux-256color" ]]; then
-        echo -e "${GREEN}[✓]${NC} Your terminal supports 256 colors"
-        else
-        echo -e "${YELLOW}[!]${NC} Your terminal might not support 256 colors"
-        echo -e "${YELLOW}[!]${NC} For best experience, set your TERM to xterm-256color"
-        
-        # Add TERM setting to shell config
-        case "$SHELL_TYPE" in
-        "zsh")
-        if ! grep -q "TERM=" "$HOME/.zshrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.zshrc"
-        fi
-        ;;
-        "bash")
-        if ! grep -q "TERM=" "$HOME/.bashrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.bashrc"
-        fi
-        ;;
-        "fish")
-        if ! grep -q "TERM=" "$HOME/.config/fish/config.fish"; then
-        echo 'set -x TERM "xterm-256color"' >> "$HOME/.config/fish/config.fish"
-        fi
-        ;;
-        esac
-        fi
-        
-        # Create a README.md file with instructions
-        echo -e "\n${BLUE}[*]${NC} Creating README.md with usage instructions..."
-        cat > "$DOTFILES_DIR/README.md" << 'EOL'
-        # Dotfiles
-        
-        This repository contains my personal dotfiles for various shells and tools.
-        
-        ## Installation
-        
-        To install these dotfiles, run:
-        
-        ```bash
-        ./install.sh
-        ```
-        EOL
-        fi
-        fi
-        fi
-        fi
-        
-        # Create a basic config.fish if it doesn't exist
-        if [[ "$SHELL_TYPE" == "fish" ]] && [[ ! -f "$DOTFILES_DIR/config.fish" ]]; then
-        echo "Creating config.fish in dotfiles directory..."
-        mkdir -p "$DOTFILES_DIR"
-        cat > "$DOTFILES_DIR/config.fish" << 'EOL'
-        # Fish shell configuration
-        
-        # Set locale settings
-        set -x LANG "en_GB.UTF-8"
-        set -x LC_ALL "en_GB.UTF-8"
-        
-        # Load common aliases and functions
-        if test -f "$HOME/.dotfiles/shell/common.sh"
-        bass source "$HOME/.dotfiles/shell/common.sh"
-        end
-        
-        # Initialize Spaceship prompt
-        if type -q spaceship_prompt
-        function fish_prompt
-        spaceship_prompt
-        end
-        
-        # Use eza instead of ls if available
-        if type -q eza
-        alias ls="eza --icons=always"
-        alias ll="eza -la --icons=always"
-        alias la="eza -a --icons=always"
-        alias lt="eza -T --icons=always"
-        alias lg="eza -la --git --icons=always"
-        end
-        
-        # Navigation shortcuts
-        alias ..="cd .."
-        alias ...="cd ../.."
-        alias ....="cd ../../.."
-        EOL
-        fi
-        
-        # Create a basic .bashrc if it doesn't exist
-        if [[ "$SHELL_TYPE" == "bash" ]] && [[ ! -f "$DOTFILES_DIR/.bashrc" ]]; then
-        echo "Creating .bashrc in dotfiles directory..."
-        cat > "$DOTFILES_DIR/.bashrc" << 'EOL'
-        # Basic .bashrc created by install.sh
-        
-        # Set locale settings
-        export LANG="en_GB.UTF-8"
-        export LC_ALL="en_GB.UTF-8"
-        
-        # Load common aliases and functions
-        if [[ -f "$HOME/.dotfiles/shell/common.sh" ]]; then
-        source "$HOME/.dotfiles/shell/common.sh"
-        fi
-        
-        # Load Spaceship prompt if available
-        if [[ -d "$HOME/.bash-spaceship-prompt" ]]; then
-        eval "$($HOME/.bash-spaceship-prompt/spaceship-prompt.bash)"
-        fi
-        
-        # Enable bash-completion if installed
-        if [[ -f /usr/local/etc/bash_completion ]]; then
-        source /usr/local/etc/bash_completion
-        elif [[ -f /etc/bash_completion ]]; then
-        source /etc/bash_completion
-        fi
-        
-        # Enable git-prompt if installed
-        if [[ -f /usr/local/etc/bash_completion.d/git-prompt.sh ]]; then
-        source /usr/local/etc/bash_completion.d/git-prompt.sh
-        elif [[ -f /etc/bash_completion.d/git-prompt ]]; then
-        source /etc/bash_completion.d/git-prompt
-        fi
-        
-        # History settings
-        HISTCONTROL=ignoreboth
-        HISTSIZE=1000
-        HISTFILESIZE=2000
-        shopt -s histappend
-        
-        # Check window size after each command
-        shopt -s checkwinsize
-        
-        # Make less more friendly for non-text input files
-        [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
-        
-        # Set a fancy prompt
-        PS1='\[\033[01;32m\]\u\[\033[00m\] \[\033[01;34m\]@\[\033[00m\] \[\033[01;36m\]\h\[\033[00m\] \[\033[01;33m\]\t\[\033[00m\] \[\033[01;35m\]\w\[\033[00m\]\n\[\033[01;32m\]➜\[\033[00m\] '
-        EOL
-        fi
-        
-        # Create a basic config.elvish if it doesn't exist
-        if [[ "$SHELL_TYPE" == "elvish" ]] && [[ ! -f "$DOTFILES_DIR/config.elvish" ]]; then
-        echo "Creating config.elvish in dotfiles directory..."
-        mkdir -p "$DOTFILES_DIR"
-        cat > "$DOTFILES_DIR/config.elvish" << 'EOL'
-        # Elvish shell configuration
-        
-        # Set locale settings
-        set-env LANG "en_GB.UTF-8"
-        set-env LC_ALL "en_GB.UTF-8"
-        
-        # Initialize Starship prompt
-        eval (starship init elvish)
-        
-        # Aliases
-        fn ls [@a]{ e:eza --icons=always $@a }
-        fn ll [@a]{ e:eza -la --icons=always $@a }
-        fn la [@a]{ e:eza -a --icons=always $@a }
-        fn lt [@a]{ e:eza -T --icons=always $@a }
-        fn lg [@a]{ e:eza -la --git --icons=always $@a }
-        
-        # Navigation shortcuts
-        fn .. { cd .. }
-        fn ... { cd ../.. }
-        fn .... { cd ../../.. }
-        EOL
-        fi
-        
-        # Add a check for terminal color support
-        echo -e "\n${BLUE}[*]${NC} Checking terminal color support..."
-        if [[ "$TERM" == "xterm-256color" || "$TERM" == "screen-256color" || "$TERM" == "tmux-256color" ]]; then
-        echo -e "${GREEN}[✓]${NC} Your terminal supports 256 colors"
-        else
-        echo -e "${YELLOW}[!]${NC} Your terminal might not support 256 colors"
-        echo -e "${YELLOW}[!]${NC} For best experience, set your TERM to xterm-256color"
-        
-        # Add TERM setting to shell config
-        case "$SHELL_TYPE" in
-        "zsh")
-        if ! grep -q "TERM=" "$HOME/.zshrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.zshrc"
-        fi
-        ;;
-        "bash")
-        if ! grep -q "TERM=" "$HOME/.bashrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.bashrc"
-        fi
-        ;;
-        "fish")
-        if ! grep -q "TERM=" "$HOME/.config/fish/config.fish"; then
-        echo 'set -x TERM "xterm-256color"' >> "$HOME/.config/fish/config.fish"
-        fi
-        ;;
-        esac
-        fi
-        
-        # Create a README.md file with instructions
-        echo -e "\n${BLUE}[*]${NC} Creating README.md with usage instructions..."
-        cat > "$DOTFILES_DIR/README.md" << 'EOL'
-        # Dotfiles
-        
-        This repository contains my personal dotfiles for various shells and tools.
-        
-        ## Installation
-        
-        To install these dotfiles, run:
-        
-        ```bash
-        ./install.sh
-        ```
-        EOL
-        fi
-        fi
-        fi
-        fi
-        
-        # Add a check for terminal color support
-        echo -e "\n${BLUE}[*]${NC} Checking terminal color support..."
-        if [[ "$TERM" == "xterm-256color" || "$TERM" == "screen-256color" || "$TERM" == "tmux-256color" ]]; then
-        echo -e "${GREEN}[✓]${NC} Your terminal supports 256 colors"
-        else
-        echo -e "${YELLOW}[!]${NC} Your terminal might not support 256 colors"
-        echo -e "${YELLOW}[!]${NC} For best experience, set your TERM to xterm-256color"
-        
-        # Add TERM setting to shell config
-        case "$SHELL_TYPE" in
-        "zsh")
-        if ! grep -q "TERM=" "$HOME/.zshrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.zshrc"
-        fi
-        ;;
-        "bash")
-        if ! grep -q "TERM=" "$HOME/.bashrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.bashrc"
-        fi
-        ;;
-        "fish")
-        if ! grep -q "TERM=" "$HOME/.config/fish/config.fish"; then
-        echo 'set -x TERM "xterm-256color"' >> "$HOME/.config/fish/config.fish"
-        fi
-        ;;
-        esac
-        fi
-        
-        # Create a README.md file with instructions
-        echo -e "\n${BLUE}[*]${NC} Creating README.md with usage instructions..."
-        cat > "$DOTFILES_DIR/README.md" << 'EOL'
-        # Dotfiles
-        
-        This repository contains my personal dotfiles for various shells and tools.
-        
-        ## Installation
-        
-        To install these dotfiles, run:
-        
-        ```bash
-        ./install.sh
-        ```
-        EOL
-        fi
-        fi
-        fi
-        fi
-        
-        # Add a check for terminal color support
-        echo -e "\n${BLUE}[*]${NC} Checking terminal color support..."
-        if [[ "$TERM" == "xterm-256color" || "$TERM" == "screen-256color" || "$TERM" == "tmux-256color" ]]; then
-        echo -e "${GREEN}[✓]${NC} Your terminal supports 256 colors"
-        else
-        echo -e "${YELLOW}[!]${NC} Your terminal might not support 256 colors"
-        echo -e "${YELLOW}[!]${NC} For best experience, set your TERM to xterm-256color"
-        
-        # Add TERM setting to shell config
-        case "$SHELL_TYPE" in
-        "zsh")
-        if ! grep -q "TERM=" "$HOME/.zshrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.zshrc"
-        fi
-        ;;
-        "bash")
-        if ! grep -q "TERM=" "$HOME/.bashrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.bashrc"
-        fi
-        ;;
-        "fish")
-        if ! grep -q "TERM=" "$HOME/.config/fish/config.fish"; then
-        echo 'set -x TERM "xterm-256color"' >> "$HOME/.config/fish/config.fish"
-        fi
-        ;;
-        esac
-        fi
-        
-        # Create a README.md file with instructions
-        echo -e "\n${BLUE}[*]${NC} Creating README.md with usage instructions..."
-        cat > "$DOTFILES_DIR/README.md" << 'EOL'
-        # Dotfiles
-        
-        This repository contains my personal dotfiles for various shells and tools.
-        
-        ## Installation
-        
-        To install these dotfiles, run:
-        
-        ```bash
-        ./install.sh
-        ```
-        EOL
-        fi
-        fi
-        fi
-        fi
-        
-        # Add a check for terminal color support
-        echo -e "\n${BLUE}[*]${NC} Checking terminal color support..."
-        if [[ "$TERM" == "xterm-256color" || "$TERM" == "screen-256color" || "$TERM" == "tmux-256color" ]]; then
-        echo -e "${GREEN}[✓]${NC} Your terminal supports 256 colors"
-        else
-        echo -e "${YELLOW}[!]${NC} Your terminal might not support 256 colors"
-        echo -e "${YELLOW}[!]${NC} For best experience, set your TERM to xterm-256color"
-        
-        # Add TERM setting to shell config
-        case "$SHELL_TYPE" in
-        "zsh")
-        if ! grep -q "TERM=" "$HOME/.zshrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.zshrc"
-        fi
-        ;;
-        "bash")
-        if ! grep -q "TERM=" "$HOME/.bashrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.bashrc"
-        fi
-        ;;
-        "fish")
-        if ! grep -q "TERM=" "$HOME/.config/fish/config.fish"; then
-        echo 'set -x TERM "xterm-256color"' >> "$HOME/.config/fish/config.fish"
-        fi
-        ;;
-        esac
-        fi
-        
-        # Create a README.md file with instructions
-        echo -e "\n${BLUE}[*]${NC} Creating README.md with usage instructions..."
-        cat > "$DOTFILES_DIR/README.md" << 'EOL'
-        # Dotfiles
-        
-        This repository contains my personal dotfiles for various shells and tools.
-        
-        ## Installation
-        
-        To install these dotfiles, run:
-        
-        ```bash
-        ./install.sh
-        ```
-        EOL
-        fi
-        fi
-        fi
-        fi
-        
-        # Add a check for terminal color support
-        echo -e "\n${BLUE}[*]${NC} Checking terminal color support..."
-        if [[ "$TERM" == "xterm-256color" || "$TERM" == "screen-256color" || "$TERM" == "tmux-256color" ]]; then
-        echo -e "${GREEN}[✓]${NC} Your terminal supports 256 colors"
-        else
-        echo -e "${YELLOW}[!]${NC} Your terminal might not support 256 colors"
-        echo -e "${YELLOW}[!]${NC} For best experience, set your TERM to xterm-256color"
-        
-        # Add TERM setting to shell config
-        case "$SHELL_TYPE" in
-        "zsh")
-        if ! grep -q "TERM=" "$HOME/.zshrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.zshrc"
-        fi
-        ;;
-        "bash")
-        if ! grep -q "TERM=" "$HOME/.bashrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.bashrc"
-        fi
-        ;;
-        "fish")
-        if ! grep -q "TERM=" "$HOME/.config/fish/config.fish"; then
-        echo 'set -x TERM "xterm-256color"' >> "$HOME/.config/fish/config.fish"
-        fi
-        ;;
-        esac
-        fi
-        
-        # Create a README.md file with instructions
-        echo -e "\n${BLUE}[*]${NC} Creating README.md with usage instructions..."
-        cat > "$DOTFILES_DIR/README.md" << 'EOL'
-        # Dotfiles
-        
-        This repository contains my personal dotfiles for various shells and tools.
-        
-        ## Installation
-        
-        To install these dotfiles, run:
-        
-        ```bash
-        ./install.sh
-        ```
-        EOL
-        fi
-        fi
-        fi
-        fi
-        
-        # Add a check for terminal color support
-        echo -e "\n${BLUE}[*]${NC} Checking terminal color support..."
-        if [[ "$TERM" == "xterm-256color" || "$TERM" == "screen-256color" || "$TERM" == "tmux-256color" ]]; then
-        echo -e "${GREEN}[✓]${NC} Your terminal supports 256 colors"
-        else
-        echo -e "${YELLOW}[!]${NC} Your terminal might not support 256 colors"
-        echo -e "${YELLOW}[!]${NC} For best experience, set your TERM to xterm-256color"
-        
-        # Add TERM setting to shell config
-        case "$SHELL_TYPE" in
-        "zsh")
-        if ! grep -q "TERM=" "$HOME/.zshrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.zshrc"
-        fi
-        ;;
-        "bash")
-        if ! grep -q "TERM=" "$HOME/.bashrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.bashrc"
-        fi
-        ;;
-        "fish")
-        if ! grep -q "TERM=" "$HOME/.config/fish/config.fish"; then
-        echo 'set -x TERM "xterm-256color"' >> "$HOME/.config/fish/config.fish"
-        fi
-        ;;
-        esac
-        fi
-        
-        # Create a README.md file with instructions
-        echo -e "\n${BLUE}[*]${NC} Creating README.md with usage instructions..."
-        cat > "$DOTFILES_DIR/README.md" << 'EOL'
-        # Dotfiles
-        
-        This repository contains my personal dotfiles for various shells and tools.
-        
-        ## Installation
-        
-        To install these dotfiles, run:
-        
-        ```bash
-        ./install.sh
-        ```
-        EOL
-        fi
-        fi
-        fi
-        fi
-        
-        # Add a check for terminal color support
-        echo -e "\n${BLUE}[*]${NC} Checking terminal color support..."
-        if [[ "$TERM" == "xterm-256color" || "$TERM" == "screen-256color" || "$TERM" == "tmux-256color" ]]; then
-        echo -e "${GREEN}[✓]${NC} Your terminal supports 256 colors"
-        else
-        echo -e "${YELLOW}[!]${NC} Your terminal might not support 256 colors"
-        echo -e "${YELLOW}[!]${NC} For best experience, set your TERM to xterm-256color"
-        
-        # Add TERM setting to shell config
-        case "$SHELL_TYPE" in
-        "zsh")
-        if ! grep -q "TERM=" "$HOME/.zshrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.zshrc"
-        fi
-        ;;
-        "bash")
-        if ! grep -q "TERM=" "$HOME/.bashrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.bashrc"
-        fi
-        ;;
-        "fish")
-        if ! grep -q "TERM=" "$HOME/.config/fish/config.fish"; then
-        echo 'set -x TERM "xterm-256color"' >> "$HOME/.config/fish/config.fish"
-        fi
-        ;;
-        esac
-        fi
-        
-        # Create a README.md file with instructions
-        echo -e "\n${BLUE}[*]${NC} Creating README.md with usage instructions..."
-        cat > "$DOTFILES_DIR/README.md" << 'EOL'
-        # Dotfiles
-        
-        This repository contains my personal dotfiles for various shells and tools.
-        
-        ## Installation
-        
-        To install these dotfiles, run:
-        
-        ```bash
-        ./install.sh
-        ```
-        EOL
-        fi
-        fi
-        fi
-        fi
-        
-        # Add a check for terminal color support
-        echo -e "\n${BLUE}[*]${NC} Checking terminal color support..."
-        if [[ "$TERM" == "xterm-256color" || "$TERM" == "screen-256color" || "$TERM" == "tmux-256color" ]]; then
-        echo -e "${GREEN}[✓]${NC} Your terminal supports 256 colors"
-        else
-        echo -e "${YELLOW}[!]${NC} Your terminal might not support 256 colors"
-        echo -e "${YELLOW}[!]${NC} For best experience, set your TERM to xterm-256color"
-        
-        # Add TERM setting to shell config
-        case "$SHELL_TYPE" in
-        "zsh")
-        if ! grep -q "TERM=" "$HOME/.zshrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.zshrc"
-        fi
-        ;;
-        "bash")
-        if ! grep -q "TERM=" "$HOME/.bashrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.bashrc"
-        fi
-        ;;
-        "fish")
-        if ! grep -q "TERM=" "$HOME/.config/fish/config.fish"; then
-        echo 'set -x TERM "xterm-256color"' >> "$HOME/.config/fish/config.fish"
-        fi
-        ;;
-        esac
-        fi
-        
-        # Create a README.md file with instructions
-        echo -e "\n${BLUE}[*]${NC} Creating README.md with usage instructions..."
-        cat > "$DOTFILES_DIR/README.md" << 'EOL'
-        # Dotfiles
-        
-        This repository contains my personal dotfiles for various shells and tools.
-        
-        ## Installation
-        
-        To install these dotfiles, run:
-        
-        ```bash
-        ./install.sh
-        ```
-        EOL
-        fi
-        fi
-        fi
-        fi
-        
-        # Add a check for terminal color support
-        echo -e "\n${BLUE}[*]${NC} Checking terminal color support..."
-        if [[ "$TERM" == "xterm-256color" || "$TERM" == "screen-256color" || "$TERM" == "tmux-256color" ]]; then
-        echo -e "${GREEN}[✓]${NC} Your terminal supports 256 colors"
-        else
-        echo -e "${YELLOW}[!]${NC} Your terminal might not support 256 colors"
-        echo -e "${YELLOW}[!]${NC} For best experience, set your TERM to xterm-256color"
-        
-        # Add TERM setting to shell config
-        case "$SHELL_TYPE" in
-        "zsh")
-        if ! grep -q "TERM=" "$HOME/.zshrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.zshrc"
-        fi
-        ;;
-        "bash")
-        if ! grep -q "TERM=" "$HOME/.bashrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.bashrc"
-        fi
-        ;;
-        "fish")
-        if ! grep -q "TERM=" "$HOME/.config/fish/config.fish"; then
-        echo 'set -x TERM "xterm-256color"' >> "$HOME/.config/fish/config.fish"
-        fi
-        ;;
-        esac
-        fi
-        
-        # Create a README.md file with instructions
-        echo -e "\n${BLUE}[*]${NC} Creating README.md with usage instructions..."
-        cat > "$DOTFILES_DIR/README.md" << 'EOL'
-        # Dotfiles
-        
-        This repository contains my personal dotfiles for various shells and tools.
-        
-        ## Installation
-        
-        To install these dotfiles, run:
-        
-        ```bash
-        ./install.sh
-        ```
-        EOL
-        fi
-        fi
-        fi
-        fi
-        
-        # Add a check for terminal color support
-        echo -e "\n${BLUE}[*]${NC} Checking terminal color support..."
-        if [[ "$TERM" == "xterm-256color" || "$TERM" == "screen-256color" || "$TERM" == "tmux-256color" ]]; then
-        echo -e "${GREEN}[✓]${NC} Your terminal supports 256 colors"
-        else
-        echo -e "${YELLOW}[!]${NC} Your terminal might not support 256 colors"
-        echo -e "${YELLOW}[!]${NC} For best experience, set your TERM to xterm-256color"
-        
-        # Add TERM setting to shell config
-        case "$SHELL_TYPE" in
-        "zsh")
-        if ! grep -q "TERM=" "$HOME/.zshrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.zshrc"
-        fi
-        ;;
-        "bash")
-        if ! grep -q "TERM=" "$HOME/.bashrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.bashrc"
-        fi
-        ;;
-        "fish")
-        if ! grep -q "TERM=" "$HOME/.config/fish/config.fish"; then
-        echo 'set -x TERM "xterm-256color"' >> "$HOME/.config/fish/config.fish"
-        fi
-        ;;
-        esac
-        fi
-        
-        # Create a README.md file with instructions
-        echo -e "\n${BLUE}[*]${NC} Creating README.md with usage instructions..."
-        cat > "$DOTFILES_DIR/README.md" << 'EOL'
-        # Dotfiles
-        
-        This repository contains my personal dotfiles for various shells and tools.
-        
-        ## Installation
-        
-        To install these dotfiles, run:
-        
-        ```bash
-        ./install.sh
-        ```
-        EOL
-        fi
-        fi
-        fi
-        fi
-        
-        # Add a check for terminal color support
-        echo -e "\n${BLUE}[*]${NC} Checking terminal color support..."
-        if [[ "$TERM" == "xterm-256color" || "$TERM" == "screen-256color" || "$TERM" == "tmux-256color" ]]; then
-        echo -e "${GREEN}[✓]${NC} Your terminal supports 256 colors"
-        else
-        echo -e "${YELLOW}[!]${NC} Your terminal might not support 256 colors"
-        echo -e "${YELLOW}[!]${NC} For best experience, set your TERM to xterm-256color"
-        
-        # Add TERM setting to shell config
-        case "$SHELL_TYPE" in
-        "zsh")
-        if ! grep -q "TERM=" "$HOME/.zshrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.zshrc"
-        fi
-        ;;
-        "bash")
-        if ! grep -q "TERM=" "$HOME/.bashrc"; then
-        echo 'export TERM="xterm-256color"' >> "$HOME/.bashrc"
-        fi
-        ;;
-        "fish")
-        if ! grep -q "TERM=" "$HOME/.config/fish/config.fish"; then
-        echo 'set -x TERM "xterm-256color"' >> "$HOME/.config/fish/config.fish"
-        fi
-        ;;
-        esac
-        fi
-        
-        # Create a README.md file with instructions
-        echo -e "\n${BLUE}[*]${NC} Creating README.md with usage instructions..."
-        cat > "$DOTFILES_DIR/README.md" << 'EOL'
-        # Dotfiles
-        
-        This repository contains my personal dotfiles for various shells and tools.
-        
-        ## Installation
-        
-        To install these dotfiles, run:
-        
-        ```bash
-        ./install.sh
-        ```
-        EOL
-        fi
-        fi
-        fi
-        fi
-        
-        # Add a check for terminal color support
-        echo -e "\n${BLUE}[*]${NC} Checking terminal color support..."
-        if [[ "$TERM" == "xterm-256color" || "$TERM" == "screen-256color" || "$TERM" == "tmux-256color" ]]; then
-        echo -e "${GREEN}[✓]${NC} Your terminal supports 256 colors"
-        else
-        echo -e "${YELLOW}[!]${NC} Your terminal might not support 256 colors"
-        echo -e "${YELLOW}[!]${NC} For best experience, set your TERM to xterm-256color"
-        
-        # Add TERM setting to shell config
-        case "$SHELL_TYPE" in
-        "zsh")
+# Create common shell directory for shared scripts
+mkdir -p "$HOME/.dotfiles/shell"
 
+# Create common.sh with shared aliases and functions
+echo -e "\n${BLUE}[*]${NC} Creating common shell configuration..."
+cat > "$HOME/.dotfiles/shell/common.sh" << 'EOL'
+# Common aliases and functions for all shells
+
+# Navigation shortcuts
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+
+# Better ls with eza if available
+if command -v eza &>/dev/null; then
+  alias ls="eza --icons=always --group-directories-first"
+  alias ll="eza -la --icons=always"
+  alias la="eza -a --icons=always"
+  alias lt="eza -T --icons=always"
+  alias lg="eza -la --git --icons=always"
+fi
+
+# Git shortcuts
+alias gs="git status"
+alias ga="git add ."
+alias gc="git commit -m"
+alias gp="git push"
+alias gl="git log --oneline --graph"
+
+# Kubernetes shortcuts
+alias k="kubectl"
+alias kgp="kubectl get pods"
+alias kgs="kubectl get services"
+alias kgd="kubectl get deployments"
+
+# Terraform shortcuts
+alias tf="terraform"
+alias tfi="terraform init"
+alias tfp="terraform plan"
+alias tfa="terraform apply"
+alias tfaa="terraform apply -auto-approve"
+alias tfd="terraform destroy"
+
+# Docker shortcuts
+alias d="docker"
+alias dc="docker-compose"
+alias dps="docker ps"
+alias di="docker images"
+
+# System shortcuts
+alias cls="clear"
+alias h="history"
+alias path="echo -e ${PATH//:/\\n}"
+EOL
+
+echo -e "${GREEN}[✓]${NC} Common shell configuration created!"
+
+# After the shell-specific configuration sections, add this code to copy .spaceshiprc.zsh
+
+# Copy .spaceshiprc.zsh to home directory for consistent prompt styling
+if [[ -f "$DOTFILES_DIR/.spaceshiprc.zsh" ]]; then
+    echo -e "\n${BLUE}[*]${NC} Setting up Spaceship prompt configuration..."
+    cp "$DOTFILES_DIR/.spaceshiprc.zsh" "$HOME/.spaceshiprc.zsh"
+    echo -e "${GREEN}[✓]${NC} Spaceship prompt configuration copied to home directory"
+else
+    echo -e "${YELLOW}[!]${NC} .spaceshiprc.zsh not found in dotfiles directory"
+    
+    # Create a basic .spaceshiprc.zsh if it doesn't exist
+    echo -e "${CYAN}[+]${NC} Creating basic .spaceshiprc.zsh..."
+    cat > "$HOME/.spaceshiprc.zsh" << 'EOL'
+# Spaceship prompt configuration
+
+# Display time
+SPACESHIP_TIME_SHOW=true
+SPACESHIP_TIME_COLOR="yellow"
+SPACESHIP_TIME_FORMAT="%T"
+SPACESHIP_TIME_PREFIX="at "
+SPACESHIP_TIME_SUFFIX=" "
+
+# Display username
+SPACESHIP_USER_SHOW=always
+SPACESHIP_USER_COLOR="green"
+SPACESHIP_USER_SUFFIX=" "
+
+# Display hostname
+SPACESHIP_HOST_SHOW=always
+SPACESHIP_HOST_COLOR="blue"
+SPACESHIP_HOST_PREFIX="@ "
+SPACESHIP_HOST_SUFFIX=" "
+
+# Display current directory
+SPACESHIP_DIR_TRUNC=3
+SPACESHIP_DIR_TRUNC_REPO=true
+SPACESHIP_DIR_COLOR="cyan"
+
+# Customize prompt
+SPACESHIP_PROMPT_ORDER=(
+  user host dir time
+  line_sep char
+)
+
+SPACESHIP_CHAR_SYMBOL="❯❯ "
+SPACESHIP_CHAR_COLOR_SUCCESS="green"
+SPACESHIP_CHAR_COLOR_FAILURE="red"
+EOL
+    echo -e "${GREEN}[✓]${NC} Basic .spaceshiprc.zsh created"
+fi
+
+# Add a final check to ensure eza is properly configured for colorful ls output
+if command -v eza &>/dev/null; then
+    echo -e "\n${BLUE}[*]${NC} Setting up colorful file listings with eza..."
+    
+    # Create a shell-specific configuration for eza aliases
+    if [[ "$SHELL_TYPE" == "zsh" ]]; then
+        if ! grep -q "alias ls=\"eza --icons=always" "$HOME/.zshrc"; then
+            echo -e "${CYAN}[+]${NC} Adding eza aliases to .zshrc..."
+            cat >> "$HOME/.zshrc" << 'EOL'
+
+# Eza aliases for colorful listings with icons
+alias ls="eza --icons=always --group-directories-first"
+alias ll="eza -la --icons=always"
+alias la="eza -a --icons=always"
+alias lt="eza -T --icons=always"
+alias lg="eza -la --git --icons=always"
+EOL
+        fi
+    elif [[ "$SHELL_TYPE" == "bash" ]]; then
+        if ! grep -q "alias ls=\"eza --icons=always" "$HOME/.bashrc"; then
+            echo -e "${CYAN}[+]${NC} Adding eza aliases to .bashrc..."
+            cat >> "$HOME/.bashrc" << 'EOL'
+
+# Eza aliases for colorful listings with icons
+alias ls="eza --icons=always --group-directories-first"
+alias ll="eza -la --icons=always"
+alias la="eza -a --icons=always"
+alias lt="eza -T --icons=always"
+alias lg="eza -la --git --icons=always"
+EOL
+        fi
+    fi
+    
+    echo -e "${GREEN}[✓]${NC} Colorful file listings configured"
+else
+    echo -e "${YELLOW}[!]${NC} eza not installed, colorful file listings not available"
+fi
+
+# Add a final message with instructions
+echo -e "\n${GREEN}[✓]${NC} ${BOLD}Setup completed successfully!${NC}"
+echo -e "${CYAN}[i]${NC} Your terminal is now configured with ${YELLOW}Spaceship prompt${NC} and ${YELLOW}MesloLGS NF${NC} font."
+echo -e "${CYAN}[i]${NC} You may need to restart your terminal or log out and back in for all changes to take effect."
+echo -e "${CYAN}[i]${NC} Make sure your terminal emulator is configured to use ${YELLOW}'MesloLGS NF'${NC} font."
+
+# Display a sample of what the prompt should look like
+echo -e "\n${BLUE}[*]${NC} ${BOLD}Your prompt should look similar to this:${NC}"
+echo -e "${GREEN}user${NC} ${BLUE}@${NC} ${CYAN}hostname${NC} ${YELLOW}at${NC} ${MAGENTA}12:34:56${NC}"
+echo -e "${BLUE}~/Developer/homeLab_setup/dotfiles${NC}"
+echo -e "${GREEN}❯❯${NC} "
