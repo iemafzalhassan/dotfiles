@@ -10,7 +10,7 @@ esac
 
 echo -e "🔍 Detecting system..."
 echo -e "🖥️  Operating System: $OS_TYPE"
-echo -e "💻 Default Shell: $SHELL"
+echo -e "💻 Current Shell: $SHELL"
 
 # Detect package manager
 if [[ "$OS_TYPE" == "Linux" ]]; then
@@ -26,6 +26,68 @@ elif [[ "$OS_TYPE" == "Mac" ]]; then
 fi
 
 echo -e "📦 Detected package manager: $PKG_MANAGER"
+
+# Ask user which shell they want to use as default
+echo -e "\n🐚 Shell Selection"
+echo -e "Which shell would you like to use as your default?"
+echo -e "1) Zsh (recommended)"
+echo -e "2) Bash"
+echo -e "3) Fish"
+echo -e "4) Elvish"
+echo -e "5) Keep current shell ($SHELL)"
+
+read -p "Enter your choice (1-5): " shell_choice
+
+case $shell_choice in
+    1)
+        SELECTED_SHELL="zsh"
+        SHELL_PATH=$(which zsh 2>/dev/null || echo "/bin/zsh")
+        ;;
+    2)
+        SELECTED_SHELL="bash"
+        SHELL_PATH=$(which bash 2>/dev/null || echo "/bin/bash")
+        ;;
+    3)
+        SELECTED_SHELL="fish"
+        SHELL_PATH=$(which fish 2>/dev/null || echo "/usr/bin/fish")
+        ;;
+    4)
+        SELECTED_SHELL="elvish"
+        SHELL_PATH=$(which elvish 2>/dev/null || echo "/usr/bin/elvish")
+        ;;
+    5|*)
+        SELECTED_SHELL=$(basename "$SHELL")
+        SHELL_PATH="$SHELL"
+        echo -e "Keeping current shell: $SELECTED_SHELL"
+        ;;
+esac
+
+# Check if the selected shell is installed, if not install it
+if ! command -v "$SELECTED_SHELL" &>/dev/null; then
+    echo -e "\n🔄 Installing $SELECTED_SHELL shell..."
+    if [[ "$PKG_MANAGER" == "brew" ]]; then
+        brew install "$SELECTED_SHELL"
+    elif [[ "$PKG_MANAGER" == "apt" ]]; then
+        sudo apt install -y "$SELECTED_SHELL"
+    elif [[ "$PKG_MANAGER" == "dnf" ]]; then
+        sudo dnf install -y "$SELECTED_SHELL"
+    elif [[ "$PKG_MANAGER" == "pacman" ]]; then
+        sudo pacman -S --noconfirm "$SELECTED_SHELL"
+    fi
+fi
+
+# Set the selected shell as default
+if [[ "$SHELL" != "$SHELL_PATH" ]]; then
+    echo -e "\n🔄 Setting $SELECTED_SHELL as your default shell..."
+    if [[ "$OS_TYPE" == "Mac" ]]; then
+        # macOS requires special handling
+        sudo chsh -s "$SHELL_PATH" "$(whoami)"
+    else
+        # Linux
+        chsh -s "$SHELL_PATH"
+    fi
+    echo -e "✅ Default shell changed to $SELECTED_SHELL. Changes will take effect after you log out and back in."
+fi
 
 # Request sudo access
 echo -e "\n🔑 Requesting sudo access..."
@@ -54,35 +116,29 @@ elif [[ "$OS_TYPE" == "Linux" ]]; then
         test -d ~/.linuxbrew && eval "$(~/.linuxbrew/bin/brew shellenv)"
         
         # Add Homebrew to the appropriate shell config for persistence
-        if [[ "$SHELL" == *"bash"* ]]; then
+        if [[ "$SELECTED_SHELL" == "bash" ]]; then
             grep -q "brew shellenv" ~/.bashrc || echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc
-        elif [[ "$SHELL" == *"zsh"* ]]; then
+        elif [[ "$SELECTED_SHELL" == "zsh" ]]; then
             grep -q "brew shellenv" ~/.zshrc || echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.zshrc
-        elif [[ "$SHELL" == *"fish"* ]]; then
+        elif [[ "$SELECTED_SHELL" == "fish" ]]; then
             mkdir -p ~/.config/fish/conf.d
             echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' > ~/.config/fish/conf.d/homebrew.fish
         fi
     fi
 fi
 
-# Install Oh My Bash if Bash is detected
-if [[ "$SHELL" == *"bash"* ]]; then
+# Install shell frameworks based on selected shell
+if [[ "$SELECTED_SHELL" == "bash" ]]; then
     if [[ ! -d "$HOME/.oh-my-bash" ]]; then
         echo -e "\n🎩 Installing Oh My Bash..."
-        bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)"
+        bash -c "$(curl -fsSL https://raw.githubusercontent.com/ohmybash/oh-my-bash/master/tools/install.sh)" "" --unattended
     fi
-fi
-
-# Install Oh My Zsh if Zsh is detected
-if [[ "$SHELL" == *"zsh"* ]]; then
+elif [[ "$SELECTED_SHELL" == "zsh" ]]; then
     if [[ ! -d "$HOME/.oh-my-zsh" ]]; then
         echo -e "\n🎩 Installing Oh My Zsh..."
-        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
     fi
-fi
-
-# Install Oh My Fish if Fish is detected
-if [[ "$SHELL" == *"fish"* ]]; then
+elif [[ "$SELECTED_SHELL" == "fish" ]]; then
     if ! command -v omf &>/dev/null; then
         echo -e "\n🎩 Installing Oh My Fish..."
         curl -L https://get.oh-my.fish | fish
@@ -131,15 +187,13 @@ elif [[ "$OS_TYPE" == "Linux" ]]; then
     echo "NOTE: You may need to configure your terminal to use 'MesloLGS NF' font"
 fi
 
-# Remove starship from the tools list since we're using spaceship
+# Add shell-specific tools based on selected shell
+SHELL_TYPE="$SELECTED_SHELL"
+echo -e "\n🔍 Setting up $SHELL_TYPE environment..."
 
-# Add shell-specific tools based on detected shell
-if [[ "$SHELL" == *"zsh"* ]]; then
-    echo -e "\n🔍 Detected Zsh shell. Setting up Zsh environment..."
+if [[ "$SHELL_TYPE" == "zsh" ]]; then
     tools+=("zsh-autosuggestions" "zsh-syntax-highlighting" "zsh-history-substring-search")
-    SHELL_TYPE="zsh"
-elif [[ "$SHELL" == *"bash"* ]]; then
-    echo -e "\n🔍 Detected Bash shell. Setting up Bash environment..."
+elif [[ "$SHELL_TYPE" == "bash" ]]; then
     # Add Bash-specific tools to match Zsh functionality
     if [[ "$PKG_MANAGER" == "brew" ]]; then
         tools+=("bash-completion@2" "bash-git-prompt")
@@ -150,12 +204,8 @@ elif [[ "$SHELL" == *"bash"* ]]; then
     elif [[ "$PKG_MANAGER" == "pacman" ]]; then
         sudo pacman -S --noconfirm bash-completion bash-git-prompt
     fi
-    SHELL_TYPE="bash"
-elif [[ "$SHELL" == *"fish"* ]]; then
-    echo -e "\n🔍 Detected Fish shell. Setting up Fish environment..."
+elif [[ "$SHELL_TYPE" == "fish" ]]; then
     # Fish has many features built-in, but we'll add Fisher plugin manager
-    SHELL_TYPE="fish"
-    # Install Fisher plugin manager for Fish
     if ! fish -c "functions -q fisher" &>/dev/null; then
         fish -c "curl -sL https://git.io/fisher | source && fisher install jorgebucaran/fisher"
         # Install useful Fisher plugins
@@ -164,13 +214,6 @@ elif [[ "$SHELL" == *"fish"* ]]; then
         fish -c "fisher install edc/bass"
         fish -c "fisher install franciscolourenco/done"
     fi
-elif [[ "$SHELL" == *"elvish"* ]]; then
-    echo -e "\n🔍 Detected Elvish shell. Setting up Elvish environment..."
-    SHELL_TYPE="elvish"
-else
-    echo -e "\n⚠️ Unknown shell detected: $SHELL"
-    echo -e "Defaulting to Bash configuration..."
-    SHELL_TYPE="bash"
 fi
 
 echo -e "\n🛠️  Installing selected tools..."
@@ -196,7 +239,7 @@ for tool in "${tools[@]}"; do
     fi
 done
 
-# Create necessary directories only for the detected shell
+# Create necessary directories only for the selected shell
 mkdir -p "$HOME/.dotfiles/shell"
 case "$SHELL_TYPE" in
     "zsh")
@@ -506,4 +549,91 @@ else
         echo "⚠️ Failed to install eza, falling back to ls"
     fi
 fi
+
+# Final cleanup - remove any remaining references to Powerlevel10k and Starship
+echo -e "\n🧹 Cleaning up any remaining references to other prompts..."
+
+# Remove Powerlevel10k from Zsh config if present
+if [[ -f "$HOME/.zshrc" ]]; then
+    sed -i.bak '/powerlevel10k/d' "$HOME/.zshrc"
+    sed -i.bak '/p10k.zsh/d' "$HOME/.zshrc"
+    # Remove the backup file
+    rm -f "$HOME/.zshrc.bak"
+fi
+
+# Remove Starship from all shell configs
+if [[ -f "$HOME/.zshrc" ]]; then
+    sed -i.bak '/starship init/d' "$HOME/.zshrc"
+    rm -f "$HOME/.zshrc.bak"
+fi
+
+if [[ -f "$HOME/.bashrc" ]]; then
+    sed -i.bak '/starship init/d' "$HOME/.bashrc"
+    rm -f "$HOME/.bashrc.bak"
+fi
+
+if [[ -f "$HOME/.config/fish/config.fish" ]]; then
+    sed -i.bak '/starship init/d' "$HOME/.config/fish/config.fish"
+    rm -f "$HOME/.config/fish/config.fish.bak"
+fi
+
+# Remove Powerlevel10k directory if it exists
+if [[ -d "$HOME/.oh-my-zsh/custom/themes/powerlevel10k" ]]; then
+    echo "Removing Powerlevel10k theme..."
+    rm -rf "$HOME/.oh-my-zsh/custom/themes/powerlevel10k"
+fi
+
+# Remove Starship config if we're not using Elvish
+if [[ "$SHELL_TYPE" != "elvish" ]] && [[ -f "$HOME/.config/starship.toml" ]]; then
+    echo "Removing Starship configuration..."
+    rm -f "$HOME/.config/starship.toml"
+fi
+
+# Ensure Spaceship is properly configured for the selected shell
+echo -e "\n🚀 Finalizing Spaceship prompt configuration for $SHELL_TYPE..."
+
+case "$SHELL_TYPE" in
+    "zsh")
+        # Make sure .spaceshiprc.zsh exists and is linked
+        if [[ ! -f "$HOME/.spaceshiprc.zsh" ]]; then
+            ln -sf "$DOTFILES_DIR/.spaceshiprc.zsh" "$HOME/.spaceshiprc.zsh"
+        fi
+        
+        # Ensure ZSH_THEME is set to spaceship in .zshrc
+        if [[ -f "$HOME/.zshrc" ]]; then
+            if ! grep -q 'ZSH_THEME="spaceship"' "$HOME/.zshrc"; then
+                sed -i.bak 's/ZSH_THEME=".*"/ZSH_THEME="spaceship"/g' "$HOME/.zshrc"
+                rm -f "$HOME/.zshrc.bak"
+            fi
+        fi
+        ;;
+    "bash")
+        # Ensure spaceship-prompt.bash is properly initialized
+        if [[ -d "$HOME/.bash-spaceship-prompt" ]]; then
+            if ! grep -q 'bash-spaceship-prompt/spaceship-prompt.bash' "$HOME/.bashrc"; then
+                echo 'eval "$($HOME/.bash-spaceship-prompt/spaceship-prompt.bash)"' >> "$HOME/.bashrc"
+            fi
+        fi
+        ;;
+    "fish")
+        # Ensure spaceship is set as the fish_prompt
+        if fish -c "type -q spaceship_prompt" &>/dev/null; then
+            fish -c "function fish_prompt; spaceship_prompt; end; funcsave fish_prompt"
+        fi
+        ;;
+esac
+
+# Final message with instructions
+echo -e "\n✅ Setup completed successfully!"
+echo -e "🚀 Your terminal is now configured with Spaceship prompt and MesloLGS NF font."
+echo -e "📝 You may need to restart your terminal or log out and back in for all changes to take effect."
+echo -e "🎨 Make sure your terminal emulator is configured to use 'MesloLGS NF' font."
+
+# Display a sample of what the prompt should look like
+echo -e "\n📊 Your prompt should look similar to this:"
+echo -e "\033[32muser\033[0m \033[34m@\033[0m \033[36mhostname\033[0m \033[33mat\033[0m \033[35m12:34:56\033[0m"
+echo -e "\033[36m~/Developer/your_dir/dotfiles\033[0m"
+echo -e "\033[32m❯❯\033[0m "
+
+exit 0
 

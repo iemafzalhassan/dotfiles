@@ -15,6 +15,7 @@ if [[ $(uname -m) == "arm64" ]]; then
 else
   export HOMEBREW_PREFIX="/usr/local"
 fi
+export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
 
 # Oh My Zsh installation path
 export ZSH="$HOME/.oh-my-zsh"
@@ -28,7 +29,7 @@ plugins=(
   git ansible asdf aws brew bun colored-man-pages colorize command-not-found cp
   copypath copyfile docker docker-compose golang helm heroku history iterm2 istioctl
   kops kubectl kubectx minikube node nvm gh git-prompt github magic-enter themes
-  tldr extract encode64
+  tldr extract encode64 z fzf terraform
 )
 
 # Load Oh My Zsh
@@ -46,11 +47,19 @@ fi
 alias zshconfig="vim ~/.zshrc"
 alias ohmyzsh="vim ~/.oh-my-zsh"
 alias cd="z"
-alias ls="eza --icons=always"
-alias ll="eza -la --icons=always"
-alias la="eza -a --icons=always"
-alias lt="eza -T --icons=always"
-alias lg="eza -la --git --icons=always"
+alias ls="eza --icons=always --group-directories-first"
+alias ll="eza -la --icons=always --group-directories-first"
+alias la="eza -a --icons=always --group-directories-first"
+alias lt="eza -T --icons=always --group-directories-first"
+alias lg="eza -la --git --icons=always --group-directories-first"
+alias cls="clear"
+
+# Git Shortcuts
+alias gs="git status"
+alias ga="git add ."
+alias gc="git commit -m"
+alias gp="git push"
+alias gl="git log --oneline --graph"
 
 # Enable zoxide for smarter navigation
 eval "$(zoxide init zsh)"
@@ -68,6 +77,19 @@ source "$HOMEBREW_PREFIX/share/zsh-history-substring-search/zsh-history-substrin
 bindkey '^[[A' history-search-backward
 bindkey '^[[B' history-search-forward
 bindkey '^R' history-incremental-search-backward
+
+# History configuration
+export HISTFILE=~/.zsh_history
+export HISTSIZE=10000
+export SAVEHIST=10000
+setopt HIST_IGNORE_ALL_DUPS
+setopt HIST_REDUCE_BLANKS
+setopt SHARE_HISTORY
+
+# Optimize Command Completion
+autoload -U compinit && compinit
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'
 
 # Set default editor based on SSH session
 if [[ -n $SSH_CONNECTION ]]; then
@@ -97,11 +119,11 @@ function magic-enter() {
   if [[ -z $BUFFER ]]; then
     echo ""
     if git rev-parse --is-inside-work-tree &>/dev/null; then
-      echo "$(eza --icons=always -la)"
+      echo "$(eza --icons=always --group-directories-first -la)"
       echo ""
       echo "$(git status -u .)"
     else
-      echo "$(eza --icons=always -la)"
+      echo "$(eza --icons=always --group-directories-first -la)"
     fi
     zle accept-line
   else

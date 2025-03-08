@@ -24,8 +24,12 @@ SPACESHIP_DIR_TRUNC_REPO=true
 SPACESHIP_DIR_COLOR="cyan"
 
 # Git settings
+SPACESHIP_GIT_SHOW=true
 SPACESHIP_GIT_SYMBOL=" "  # Using a Nerd Font icon for git
+SPACESHIP_GIT_PREFIX="git:("
+SPACESHIP_GIT_SUFFIX=") "
 SPACESHIP_GIT_BRANCH_COLOR="green"
+SPACESHIP_GIT_STATUS_SHOW=true
 SPACESHIP_GIT_STATUS_COLOR="red"
 
 # Execution time
@@ -35,21 +39,16 @@ SPACESHIP_EXEC_TIME_SUFFIX=" "
 SPACESHIP_EXEC_TIME_COLOR="yellow"
 SPACESHIP_EXEC_TIME_THRESHOLD=5000
 
-# Prompt character - using a Nerd Font icon
-SPACESHIP_CHAR_SYMBOL="❯ "
+# Prompt character
+SPACESHIP_CHAR_SYMBOL="❯❯ "
 SPACESHIP_CHAR_SUFFIX=" "
 SPACESHIP_CHAR_COLOR_SUCCESS="green"
 SPACESHIP_CHAR_COLOR_FAILURE="red"
 
 # Prompt order
 SPACESHIP_PROMPT_ORDER=(
-  user          # Username section
-  host          # Hostname section
-  dir           # Current directory section
-  git           # Git section (git_branch + git_status)
-  exec_time     # Execution time
-  line_sep      # Line break
-  char          # Prompt character
+  user host dir time
+  line_sep char
 )
 
 # Right prompt order
