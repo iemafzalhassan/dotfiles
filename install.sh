@@ -390,12 +390,36 @@ elif [[ "$SHELL_TYPE" == "elvish" ]]; then
     echo -e "${GREEN}[✓]${NC} Elvish configuration complete!"
 fi
 
+# Replace the current common.sh creation section with this improved version
+echo -e "\n${BLUE}[*]${NC} Setting up common shell configuration..."
+
+# Define dotfiles directory if not already defined
+DOTFILES_DIR="${DOTFILES_DIR:-$(pwd)}"
+
 # Create common shell directory for shared scripts
 mkdir -p "$HOME/.dotfiles/shell"
 
-# Create common.sh with shared aliases and functions
-echo -e "\n${BLUE}[*]${NC} Creating common shell configuration..."
-cat > "$HOME/.dotfiles/shell/common.sh" << 'EOL'
+# Function to handle common shell configuration
+setup_common_shell_config() {
+    # Check if common.sh exists in the repository
+    if [[ -f "$DOTFILES_DIR/shell/common.sh" ]]; then
+        echo -e "${CYAN}[+]${NC} Found common.sh in repository, copying to ~/.dotfiles/shell/"
+        
+        # Backup existing file if it exists
+        if [[ -f "$HOME/.dotfiles/shell/common.sh" ]]; then
+            echo -e "${YELLOW}[!]${NC} Existing common.sh found, creating backup..."
+            cp "$HOME/.dotfiles/shell/common.sh" "$HOME/.dotfiles/shell/common.sh.backup.$(date +%Y%m%d%H%M%S)"
+        fi
+        
+        # Copy the file from repository
+        cp "$DOTFILES_DIR/shell/common.sh" "$HOME/.dotfiles/shell/common.sh"
+        chmod 644 "$HOME/.dotfiles/shell/common.sh"
+        echo -e "${GREEN}[✓]${NC} Common shell configuration copied from repository"
+    else
+        echo -e "${YELLOW}[!]${NC} common.sh not found in repository, creating basic version..."
+        
+        # Create a basic common.sh if it doesn't exist in the repository
+        cat > "$HOME/.dotfiles/shell/common.sh" << 'EOL'
 # Common aliases and functions for all shells
 
 # Navigation shortcuts
@@ -444,154 +468,44 @@ alias cls="clear"
 alias h="history"
 alias path="echo -e ${PATH//:/\\n}"
 EOL
-
-echo -e "${GREEN}[✓]${NC} Common shell configuration created!"
-
-# After the shell-specific configuration sections, add this code to copy .spaceshiprc.zsh
-
-# Copy .spaceshiprc.zsh to home directory for consistent prompt styling
-if [[ -f "$DOTFILES_DIR/.spaceshiprc.zsh" ]]; then
-    echo -e "\n${BLUE}[*]${NC} Setting up Spaceship prompt configuration..."
-    cp "$DOTFILES_DIR/.spaceshiprc.zsh" "$HOME/.spaceshiprc.zsh"
-    echo -e "${GREEN}[✓]${NC} Spaceship prompt configuration copied to home directory"
-else
-    echo -e "${YELLOW}[!]${NC} .spaceshiprc.zsh not found in dotfiles directory"
-    
-    # Create a basic .spaceshiprc.zsh if it doesn't exist
-    echo -e "${CYAN}[+]${NC} Creating basic .spaceshiprc.zsh..."
-    cat > "$HOME/.spaceshiprc.zsh" << 'EOL'
-# Spaceship prompt configuration
-
-# Display time
-SPACESHIP_TIME_SHOW=true
-SPACESHIP_TIME_COLOR="yellow"
-SPACESHIP_TIME_FORMAT="%T"
-SPACESHIP_TIME_PREFIX="at "
-SPACESHIP_TIME_SUFFIX=" "
-
-# Display username
-SPACESHIP_USER_SHOW=always
-SPACESHIP_USER_COLOR="green"
-SPACESHIP_USER_SUFFIX=" "
-
-# Display hostname
-SPACESHIP_HOST_SHOW=always
-SPACESHIP_HOST_COLOR="blue"
-SPACESHIP_HOST_PREFIX="@ "
-SPACESHIP_HOST_SUFFIX=" "
-
-# Display current directory
-SPACESHIP_DIR_TRUNC=3
-SPACESHIP_DIR_TRUNC_REPO=true
-SPACESHIP_DIR_COLOR="cyan"
-
-# Customize prompt
-SPACESHIP_PROMPT_ORDER=(
-  user host dir time
-  line_sep char
-)
-
-SPACESHIP_CHAR_SYMBOL="❯❯ "
-SPACESHIP_CHAR_COLOR_SUCCESS="green"
-SPACESHIP_CHAR_COLOR_FAILURE="red"
-EOL
-    echo -e "${GREEN}[✓]${NC} Basic .spaceshiprc.zsh created"
-fi
-
-# Add a final check to ensure eza is properly configured for colorful ls output
-if command -v eza &>/dev/null; then
-    echo -e "\n${BLUE}[*]${NC} Setting up colorful file listings with eza..."
-    
-    # Create a shell-specific configuration for eza aliases
-    if [[ "$SHELL_TYPE" == "zsh" ]]; then
-        if ! grep -q "alias ls=\"eza --icons=always" "$HOME/.zshrc"; then
-            echo -e "${CYAN}[+]${NC} Adding eza aliases to .zshrc..."
-            cat >> "$HOME/.zshrc" << 'EOL'
-
-# Eza aliases for colorful listings with icons
-alias ls="eza --icons=always --group-directories-first"
-alias ll="eza -la --icons=always"
-alias la="eza -a --icons=always"
-alias lt="eza -T --icons=always"
-alias lg="eza -la --git --icons=always"
-EOL
-        fi
-    elif [[ "$SHELL_TYPE" == "bash" ]]; then
-        if ! grep -q "alias ls=\"eza --icons=always" "$HOME/.bashrc"; then
-            echo -e "${CYAN}[+]${NC} Adding eza aliases to .bashrc..."
-            cat >> "$HOME/.bashrc" << 'EOL'
-
-# Eza aliases for colorful listings with icons
-alias ls="eza --icons=always --group-directories-first"
-alias ll="eza -la --icons=always"
-alias la="eza -a --icons=always"
-alias lt="eza -T --icons=always"
-alias lg="eza -la --git --icons=always"
-EOL
-        fi
+        echo -e "${GREEN}[✓]${NC} Basic common shell configuration created"
     fi
     
-    echo -e "${GREEN}[✓]${NC} Colorful file listings configured"
-else
-    echo -e "${YELLOW}[!]${NC} eza not installed, colorful file listings not available"
-fi
-
-# Add this before the final message
-echo -e "\n${YELLOW}[!]${NC} IMPORTANT: To ensure all tools work properly after installation:"
-echo -e "   1. Restart your terminal session, or"
-echo -e "   2. Run: source ~/.${SELECTED_SHELL}rc"
-echo -e "   3. If using a different shell than selected, log out and log back in"
-
-# After the shell-specific configuration sections, add this code to copy .spaceshiprc.zsh
-
-# Copy .spaceshiprc.zsh to home directory for consistent prompt styling
-if [[ -f "$DOTFILES_DIR/.spaceshiprc.zsh" ]]; then
-    echo -e "\n${BLUE}[*]${NC} Setting up Spaceship prompt configuration..."
-    cp "$DOTFILES_DIR/.spaceshiprc.zsh" "$HOME/.spaceshiprc.zsh"
-    echo -e "${GREEN}[✓]${NC} Spaceship prompt configuration copied to home directory"
-else
-    echo -e "${YELLOW}[!]${NC} .spaceshiprc.zsh not found in dotfiles directory"
+    # Add sourcing of common.sh to shell-specific config files if not already there
+    case "$SHELL_TYPE" in
+        zsh)
+            if ! grep -q "source ~/.dotfiles/shell/common.sh" "$HOME/.zshrc"; then
+                echo -e "${CYAN}[+]${NC} Adding common.sh sourcing to .zshrc..."
+                echo -e "\n# Source common shell configuration" >> "$HOME/.zshrc"
+                echo "source ~/.dotfiles/shell/common.sh" >> "$HOME/.zshrc"
+            fi
+            ;;
+        bash)
+            if ! grep -q "source ~/.dotfiles/shell/common.sh" "$HOME/.bashrc"; then
+                echo -e "${CYAN}[+]${NC} Adding common.sh sourcing to .bashrc..."
+                echo -e "\n# Source common shell configuration" >> "$HOME/.bashrc"
+                echo "source ~/.dotfiles/shell/common.sh" >> "$HOME/.bashrc"
+            fi
+            ;;
+        fish)
+            mkdir -p "$HOME/.config/fish/conf.d"
+            if [[ ! -f "$HOME/.config/fish/conf.d/common.fish" ]]; then
+                echo -e "${CYAN}[+]${NC} Creating Fish wrapper for common.sh..."
+                echo "bass source ~/.dotfiles/shell/common.sh" > "$HOME/.config/fish/conf.d/common.fish"
+            fi
+            ;;
+        *)
+            echo -e "${YELLOW}[!]${NC} No specific common.sh integration for $SHELL_TYPE"
+            ;;
+    esac
     
-    # Create a basic .spaceshiprc.zsh if it doesn't exist
-    echo -e "${CYAN}[+]${NC} Creating basic .spaceshiprc.zsh..."
-    cat > "$HOME/.spaceshiprc.zsh" << 'EOL'
-# Spaceship prompt configuration
+    echo -e "${GREEN}[✓]${NC} Common shell configuration setup complete"
+}
 
-# Display time
-SPACESHIP_TIME_SHOW=true
-SPACESHIP_TIME_COLOR="yellow"
-SPACESHIP_TIME_FORMAT="%T"
-SPACESHIP_TIME_PREFIX="at "
-SPACESHIP_TIME_SUFFIX=" "
+# Call the function to set up common shell configuration
+setup_common_shell_config
 
-# Display username
-SPACESHIP_USER_SHOW=always
-SPACESHIP_USER_COLOR="green"
-SPACESHIP_USER_SUFFIX=" "
-
-# Display hostname
-SPACESHIP_HOST_SHOW=always
-SPACESHIP_HOST_COLOR="blue"
-SPACESHIP_HOST_PREFIX="@ "
-SPACESHIP_HOST_SUFFIX=" "
-
-# Display current directory
-SPACESHIP_DIR_TRUNC=3
-SPACESHIP_DIR_TRUNC_REPO=true
-SPACESHIP_DIR_COLOR="cyan"
-
-# Customize prompt
-SPACESHIP_PROMPT_ORDER=(
-  user host dir time
-  line_sep char
-)
-
-SPACESHIP_CHAR_SYMBOL="❯❯ "
-SPACESHIP_CHAR_COLOR_SUCCESS="green"
-SPACESHIP_CHAR_COLOR_FAILURE="red"
-EOL
-    echo -e "${GREEN}[✓]${NC} Basic .spaceshiprc.zsh created"
-fi
+# Continue with the rest of your script...
 
 # Add a final check to ensure eza is properly configured for colorful ls output
 if command -v eza &>/dev/null; then
