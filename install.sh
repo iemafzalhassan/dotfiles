@@ -13,16 +13,16 @@ DIM='\033[2m'
 
 # ASCII Art Banner
 echo -e "${GREEN}"
-echo -e "╔═══════════════════════════════════════════════════════════╗"
-echo -e "║                                                           ║"
+echo -e "╔══════════════════════════════════════════════════════════╗"
+echo -e "║                                                          ║"
 echo -e "║   ██████╗  ██████╗ ████████╗███████╗██╗██╗     ███████╗  ║"
 echo -e "║   ██╔══██╗██╔═══██╗╚══██╔══╝██╔════╝██║██║     ██╔════╝  ║"
 echo -e "║   ██║  ██║██║   ██║   ██║   █████╗  ██║██║     █████╗    ║"
 echo -e "║   ██║  ██║██║   ██║   ██║   ██╔══╝  ██║██║     ██╔══╝    ║"
 echo -e "║   ██████╔╝╚██████╔╝   ██║   ██║     ██║███████╗███████╗  ║"
 echo -e "║   ╚═════╝  ╚═════╝    ╚═╝   ╚═╝     ╚═╝╚══════╝╚══════╝  ║"
-echo -e "║                                                           ║"
-echo -e "╚═══════════════════════════════════════════════════════════╝"
+echo -e "║                                                          ║"
+echo -e "╚══════════════════════════════════════════════════════════╝"
 echo -e "${NC}"
 echo -e "${CYAN}>> dotfile Setup - Terminal Environment Installer <<${NC}\n"
 echo -e "${GREEN}>>   Author: Md. Afzal Hassan Ehsani   <<${NC}\n"
@@ -151,9 +151,19 @@ if ! command -v brew &>/dev/null; then
             
             # Add Homebrew to the appropriate shell config for persistence
             if [[ "$SELECTED_SHELL" == "bash" ]]; then
-                grep -q "brew shellenv" ~/.bashrc || echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc
+                # Remove any existing Homebrew PATH entries to avoid duplicates
+                sed -i '/linuxbrew/d' ~/.bashrc
+                # Add Homebrew to PATH with proper evaluation
+                echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.bashrc
+                # Source bashrc to make changes effective immediately
+                source ~/.bashrc
             elif [[ "$SELECTED_SHELL" == "zsh" ]]; then
-                grep -q "brew shellenv" ~/.zshrc || echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.zshrc
+                # Remove any existing Homebrew PATH entries to avoid duplicates
+                sed -i '/linuxbrew/d' ~/.zshrc
+                # Add Homebrew to PATH
+                echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' >> ~/.zshrc
+                # Source zshrc to make changes effective immediately
+                source ~/.zshrc
             elif [[ "$SELECTED_SHELL" == "fish" ]]; then
                 mkdir -p ~/.config/fish/conf.d
                 echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' > ~/.config/fish/conf.d/homebrew.fish
@@ -265,6 +275,24 @@ for tool in "${tools[@]}"; do
         fi
     else
         echo -e "${GREEN}[✓]${NC} $tool is already installed"
+    fi
+done
+
+# After installing common tools, add this verification
+echo -e "\n${BLUE}[*]${NC} Verifying tool installation..."
+for tool in "${tools[@]}"; do
+    if command -v "$tool" &>/dev/null; then
+        echo -e "${GREEN}[✓]${NC} $tool is properly installed and in PATH"
+    else
+        echo -e "${YELLOW}[!]${NC} $tool might not be in PATH. Adding Homebrew bin directory to PATH..."
+        # Ensure Homebrew bin is in PATH for the current session
+        export PATH="/home/linuxbrew/.linuxbrew/bin:$PATH"
+        # Check again after PATH update
+        if command -v "$tool" &>/dev/null; then
+            echo -e "${GREEN}[✓]${NC} $tool is now accessible"
+        else
+            echo -e "${RED}[✗]${NC} $tool is still not accessible. Please check installation."
+        fi
     fi
 done
 
@@ -418,6 +446,101 @@ alias path="echo -e ${PATH//:/\\n}"
 EOL
 
 echo -e "${GREEN}[✓]${NC} Common shell configuration created!"
+
+# After the shell-specific configuration sections, add this code to copy .spaceshiprc.zsh
+
+# Copy .spaceshiprc.zsh to home directory for consistent prompt styling
+if [[ -f "$DOTFILES_DIR/.spaceshiprc.zsh" ]]; then
+    echo -e "\n${BLUE}[*]${NC} Setting up Spaceship prompt configuration..."
+    cp "$DOTFILES_DIR/.spaceshiprc.zsh" "$HOME/.spaceshiprc.zsh"
+    echo -e "${GREEN}[✓]${NC} Spaceship prompt configuration copied to home directory"
+else
+    echo -e "${YELLOW}[!]${NC} .spaceshiprc.zsh not found in dotfiles directory"
+    
+    # Create a basic .spaceshiprc.zsh if it doesn't exist
+    echo -e "${CYAN}[+]${NC} Creating basic .spaceshiprc.zsh..."
+    cat > "$HOME/.spaceshiprc.zsh" << 'EOL'
+# Spaceship prompt configuration
+
+# Display time
+SPACESHIP_TIME_SHOW=true
+SPACESHIP_TIME_COLOR="yellow"
+SPACESHIP_TIME_FORMAT="%T"
+SPACESHIP_TIME_PREFIX="at "
+SPACESHIP_TIME_SUFFIX=" "
+
+# Display username
+SPACESHIP_USER_SHOW=always
+SPACESHIP_USER_COLOR="green"
+SPACESHIP_USER_SUFFIX=" "
+
+# Display hostname
+SPACESHIP_HOST_SHOW=always
+SPACESHIP_HOST_COLOR="blue"
+SPACESHIP_HOST_PREFIX="@ "
+SPACESHIP_HOST_SUFFIX=" "
+
+# Display current directory
+SPACESHIP_DIR_TRUNC=3
+SPACESHIP_DIR_TRUNC_REPO=true
+SPACESHIP_DIR_COLOR="cyan"
+
+# Customize prompt
+SPACESHIP_PROMPT_ORDER=(
+  user host dir time
+  line_sep char
+)
+
+SPACESHIP_CHAR_SYMBOL="❯❯ "
+SPACESHIP_CHAR_COLOR_SUCCESS="green"
+SPACESHIP_CHAR_COLOR_FAILURE="red"
+EOL
+    echo -e "${GREEN}[✓]${NC} Basic .spaceshiprc.zsh created"
+fi
+
+# Add a final check to ensure eza is properly configured for colorful ls output
+if command -v eza &>/dev/null; then
+    echo -e "\n${BLUE}[*]${NC} Setting up colorful file listings with eza..."
+    
+    # Create a shell-specific configuration for eza aliases
+    if [[ "$SHELL_TYPE" == "zsh" ]]; then
+        if ! grep -q "alias ls=\"eza --icons=always" "$HOME/.zshrc"; then
+            echo -e "${CYAN}[+]${NC} Adding eza aliases to .zshrc..."
+            cat >> "$HOME/.zshrc" << 'EOL'
+
+# Eza aliases for colorful listings with icons
+alias ls="eza --icons=always --group-directories-first"
+alias ll="eza -la --icons=always"
+alias la="eza -a --icons=always"
+alias lt="eza -T --icons=always"
+alias lg="eza -la --git --icons=always"
+EOL
+        fi
+    elif [[ "$SHELL_TYPE" == "bash" ]]; then
+        if ! grep -q "alias ls=\"eza --icons=always" "$HOME/.bashrc"; then
+            echo -e "${CYAN}[+]${NC} Adding eza aliases to .bashrc..."
+            cat >> "$HOME/.bashrc" << 'EOL'
+
+# Eza aliases for colorful listings with icons
+alias ls="eza --icons=always --group-directories-first"
+alias ll="eza -la --icons=always"
+alias la="eza -a --icons=always"
+alias lt="eza -T --icons=always"
+alias lg="eza -la --git --icons=always"
+EOL
+        fi
+    fi
+    
+    echo -e "${GREEN}[✓]${NC} Colorful file listings configured"
+else
+    echo -e "${YELLOW}[!]${NC} eza not installed, colorful file listings not available"
+fi
+
+# Add this before the final message
+echo -e "\n${YELLOW}[!]${NC} IMPORTANT: To ensure all tools work properly after installation:"
+echo -e "   1. Restart your terminal session, or"
+echo -e "   2. Run: source ~/.${SELECTED_SHELL}rc"
+echo -e "   3. If using a different shell than selected, log out and log back in"
 
 # After the shell-specific configuration sections, add this code to copy .spaceshiprc.zsh
 
