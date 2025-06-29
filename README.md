@@ -2,37 +2,20 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A sophisticated, cross-platform configuration setup for development environments with a strong focus on DevOps workflows. This repository contains customized configurations for Zsh, Neovim, and other development tools that work seamlessly across macOS, Debian-based, Arch-based, and RHEL-based Linux distributions.
-
----
-
-## 🚀 Quick Start
-
-Get up and running with a single command. This will clone the repository and execute the installation script.
-
-```bash
-# Clone the repository
-git clone https://github.com/iemafzal/dotfiles.git ~/.dotfiles
-
-# Navigate to the dotfiles directory
-cd ~/.dotfiles
-
-# Run the installation script
-./install.sh
-```
+A meticulously crafted, cross-platform configuration for a powerful and beautiful development environment. This setup focuses on elegance, speed, and a seamless DevOps workflow, leveraging Zsh, Neovim, and a suite of modern command-line tools. It is designed to be fully reproducible and works flawlessly across macOS, Debian, Arch, and RHEL-based systems.
 
 ---
 
 ## ✨ Features
 
-This setup is designed to be powerful, consistent, and easy to manage across multiple systems.
+This configuration is built on a foundation of modern, fast, and powerful tools, ensuring a consistent and efficient workflow everywhere.
 
-- **Cross-Platform Consistency**: The same look, feel, and functionality on macOS, Debian, Arch, and RHEL.
-- **Automated Installation**: The main script (`install.sh`) handles OS detection, dependency installation, and configuration symlinking.
-- **Zsh Powered**: A rich shell experience with Oh My Zsh, Spaceship Prompt, and numerous plugins.
-- **Neovim as an IDE**: A full-fledged Neovim setup with LSP, fuzzy finding, Git integration, and more.
-- **DevOps Ready**: Packed with aliases, functions, and tools for Kubernetes, Docker, Terraform, and AWS.
-- **Modular & Customizable**: Easily extend or modify configurations to fit your personal workflow.
+-   **Cross-Platform by Design**: A single, unified experience on macOS and major Linux distributions.
+-   **Automated & Idempotent Installation**: The `install.sh` script handles OS detection, dependency installation, and symlinking via `stow`, making setup a breeze.
+-   **The Ultimate Shell Experience**: Zsh powered by the sleek and powerful **Spaceship Prompt**.
+-   **Next-Generation Neovim IDE**: A lightning-fast, fully-featured Neovim setup managed by **Lazy.nvim**. It includes LSP, autocompletion, fuzzy finding, and AI-powered assistance with GitHub Copilot.
+-   **Modular Alias System**: A clean, organized approach to shell aliases, with dedicated files for `git`, `docker`, `kubernetes`, and more.
+-   **Git Enhancement**: A superior Git experience with **Delta** for beautiful diffs and `lazygit` for an intuitive terminal UI.
 
 ---
 
@@ -40,71 +23,64 @@ This setup is designed to be powerful, consistent, and easy to manage across mul
 
 ### 🐚 Shell Environment (Zsh)
 
-- **Framework**: Oh My Zsh for robust plugin and theme management.
-- **Prompt**: Spaceship Prompt for a detailed, context-aware prompt (Git branch, K8s context, etc.).
-- **Plugins**: Includes `zsh-syntax-highlighting`, `zsh-autosuggestions`, `fzf`, and more.
-- **Navigation**: Directory jumping with `z` and history search with `Ctrl+R`.
-- **DevOps Aliases**: Hundreds of aliases for `kubectl`, `docker`, `terraform`, and `aws`.
+-   **Prompt**: **[Spaceship Prompt](https://spaceship-prompt.sh/)** for a minimal, powerful, and customizable Zsh prompt.
+-   **Syntax Highlighting**: **[zsh-syntax-highlighting](https://github.com/zsh-users/zsh-syntax-highlighting)** for real-time command highlighting.
+-   **Autosuggestions**: **[zsh-autosuggestions](https://github.com/zsh-users/zsh-autosuggestions)** for fish-like autosuggestions based on command history.
+-   **Fuzzy Finding**: Integrated **[fzf](https://github.com/junegunn/fzf)** for blazing-fast history search (`Ctrl+R`) and directory jumping.
+-   **Modular Aliases**: A clean `~/.zshrc` that sources aliases from `~/.config/zsh/aliases/`, keeping your shell configuration organized and easy to extend.
 
-### 💻 Editor Setup (Neovim)
+### 💻 Editor Setup (Neovim with Lazy.nvim)
 
-- **Plugin Manager**: Packer.nvim for declarative and fast plugin management.
-- **LSP Integration**: Out-of-the-box support for numerous languages (Python, Go, Rust, TypeScript, Terraform, etc.).
-- **UI Enhancements**: Lualine, Bufferline, Nvim-Tree, and Which-Key for a modern editing experience.
-- **Fuzzy Finding**: Telescope for finding files, text, buffers, and more.
-- **Git Integration**: Fugitive and Gitsigns for seamless Git operations from within Neovim.
+A complete IDE experience centered around performance and modern tooling.
 
----
-
-## 📦 Supported Platforms
-
-The installation script automatically detects your OS and installs the appropriate packages.
-
-| Platform      | Package Manager | Installation Script          |
-|---------------|-----------------|------------------------------|
-| macOS         | Homebrew        | `packages/macos.sh`          |
-| Debian/Ubuntu | APT             | `packages/debian.sh`         |
-| Arch Linux    | Pacman / AUR    | `packages/arch.sh`           |
-| RHEL/Fedora   | DNF             | `packages/redhat.sh`         |
+-   **Plugin Manager**: **[Lazy.nvim](https://github.com/folke/lazy.nvim)** for declarative, fast, and robust plugin management.
+-   **AI-Assisted Coding**: **[GitHub Copilot](https://github.com/github/copilot.vim)** integrated with a manual trigger (`<leader>cp` or `<F2>`) to provide suggestions on demand without being intrusive.
+-   **LSP & Autocompletion**: **[nvim-lspconfig](https://github.com/neovim/nvim-lspconfig)** and **[nvim-cmp](https://github.com/hrsh7th/nvim-cmp)** for intelligent, language-aware completion and diagnostics.
+-   **Modern UI**: A beautiful and functional UI powered by **[Catppuccin Theme](https://github.com/catppuccin/nvim)**, **[lualine](https://github.com/nvim-lualine/lualine.nvim)**, and **[nvim-web-devicons](https://github.com/nvim-tree/nvim-web-devicons)**.
+-   **File Navigation**: **[Telescope.nvim](https://github.com/nvim-telescope/telescope.nvim)** for finding files, text, and more, complemented by **[nvim-tree.lua](https://github.com/nvim-tree/nvim-tree.lua)** for a file explorer sidebar.
+-   **Git Integration**: **[gitsigns.nvim](https://github.com/lewis6991/gitsigns.nvim)** for Git decorations and **[lazygit](https://github.com/jesseduffield/lazygit)** for a full-featured Git TUI.
+-   **Enhanced Diffs**: **[Delta](https://github.com/dandavison/delta)** configured for beautiful and readable `git diff` output.
 
 ---
 
-## 🔧 Customization
+## 🚀 Installation
 
-### Adding Custom Zsh Functions
+The installation process is designed to be simple and robust.
 
-Your custom functions and aliases can be added to:
-`~/.dotfiles/zsh/custom/functions.zsh`
+1.  **Clone the Repository**:
+    ```bash
+    git clone https://github.com/iemafzal/dotfiles.git ~/.dotfiles
+    ```
 
-### Adding OS-Specific Configurations
+2.  **Run the Installer**:
+    The main installation script will detect your OS, install all necessary dependencies using the appropriate package manager, and symlink the configuration files into place with `stow`.
+    ```bash
+    cd ~/.dotfiles
+    ./install.sh
+    ```
 
-To add support for a new OS or modify an existing one, create or edit a file in:
-`~/.dotfiles/zsh/os-specific/`
+3.  **Restart Your Shell**:
+    Once the installation is complete, restart your shell or source your `.zshrc` to apply the changes.
 
-### Extending Neovim Configuration
-
-Neovim plugins are managed in `~/.dotfiles/.config/nvim/init.lua`. You can easily add new plugins or modify existing configurations there.
+    Open Neovim (`nvim`) for the first time. Lazy.nvim will automatically install all the plugins.
 
 ---
 
-## ❓ Troubleshooting
+## 🙏 Acknowledgements & Credits
 
-- **Zsh plugins not loading?** Make sure Oh My Zsh is installed correctly. You might need to re-source your `.zshrc` or restart your terminal.
-- **Neovim plugins missing?** Run `:PackerSync` in Neovim to install/update plugins.
-- **LSP servers not working?** Verify your setup with `:LspInfo` and run the LSP setup script if needed: `~/.dotfiles/scripts/setup_lsp.sh`.
+This setup stands on the shoulders of giants. A huge thank you to the creators and maintainers of these incredible open-source projects:
+
+-   **[Neovim](https://neovim.io/)**: For being the best editor on the planet.
+-   **[Lazy.nvim](https://github.com/folke/lazy.nvim)**: For revolutionizing Neovim plugin management.
+-   **[Spaceship Prompt](https://spaceship-prompt.sh/)**: For a beautiful and functional Zsh prompt.
+-   **[Stow](https://www.gnu.org/software/stow/)**: For elegant symlink management.
+-   **[Delta](https://github.com/dandavison/delta)**: For making code reviews a pleasure.
+-   **[lazygit](https://github.com/jesseduffield/lazygit)**: For simplifying complex Git operations.
+-   **The entire Neovim plugin community**: Especially the authors of Telescope, Lualine, nvim-tree, and Catppuccin.
 
 ---
 
 ## 📜 License
 
 This project is licensed under the MIT License.
-
----
-
-## 🙏 Acknowledgements
-
-This setup wouldn't be possible without the amazing work of the open-source community. Special thanks to:
-- Oh My Zsh
-- Spaceship Prompt
-- Neovim and its incredible plugin ecosystem
 
