@@ -33,7 +33,7 @@ bash setup.sh --help
 | Repo path | Installed to | What it is |
 |---|---|---|
 | `.zshrc` | `~/.zshrc` | Main shell config (prompt, fzf, zoxide, nvm, aliases/functions) |
-| `.zprofile` | `~/.zprofile` | Login shell (brew shellenv, Kiro, OrbStack) |
+| `.zprofile` | `~/.zprofile` | Login shell (brew shellenv, Antigravity PATH) |
 | `.zshenv` | `~/.zshenv` | Cargo env |
 | `.gitconfig` | `~/.gitconfig` | Git: delta pager, SSH commit signing |
 | `.vimrc` | `~/.vimrc` | Minimal vim compat (rtp for fzf) |
