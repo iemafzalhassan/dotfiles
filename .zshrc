@@ -144,7 +144,7 @@ export LC_ALL="en_US.UTF-8"
 [[ -f "$HOME/.config/spaceship/config.zsh" ]] && source "$HOME/.config/spaceship/config.zsh"
 
 # Docker CLI completions — in fpath BEFORE Oh My Zsh loads, so its single compinit picks them up
-fpath=(/Users/iemafzal/.docker/completions $fpath)
+fpath=($HOME/.docker/completions $fpath)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -389,12 +389,12 @@ export GITHUB_PERSONAL_ACCESS_TOKEN="REPLACE_WITH_YOUR_GITHUB_TOKEN"
 [[ -f "$HOME/.zshrc.local" ]] && source "$HOME/.zshrc.local"
 
 # Added by Antigravity
-export PATH="/Users/iemafzal/.antigravity/antigravity/bin:$PATH"
+export PATH="$HOME/.antigravity/antigravity/bin:$PATH"
 # Added by Antigravity IDE
-export PATH="/Users/iemafzal/.antigravity-ide/antigravity-ide/bin:$PATH"
+export PATH="$HOME/.antigravity-ide/antigravity-ide/bin:$PATH"
 export KUBECONFIG=~/k3s.yaml
 alias mp="multipass"
 
 
 # Added by Antigravity CLI installer
-export PATH="/Users/iemafzal/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"

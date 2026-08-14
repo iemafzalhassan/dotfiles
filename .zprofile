@@ -8,4 +8,4 @@ elif [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
 fi
 
 # Added by Antigravity CLI installer
-export PATH="/Users/iemafzal/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"

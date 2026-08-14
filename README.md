@@ -16,7 +16,7 @@ That's it. The script:
 
 - Detects macOS vs Linux and installs Homebrew if missing (works on both)
 - Installs all tools actually used: `git zsh neovim tmux fzf zoxide bat eza ripgrep fd jq yq lazygit lazydocker tldr thefuck delta nvm kubectl helm terraform docker` + Ghostty (macOS)
-- Installs Oh My Zsh and copies the custom plugins + Spaceship theme from this repo
+- Installs Oh My Zsh and **symlinks** the custom plugins + Spaceship theme straight from this repo (edit the repo, it's live everywhere)
 - **Backs up** any existing config, then symlinks everything into place
 - Installs Node (nvm LTS), SDKMAN (Java 17 + Maven), and syncs Neovim plugins
 - Sets zsh as default shell
@@ -40,7 +40,7 @@ bash setup.sh --help
 | `ghostty/config` | `~/.config/ghostty/config` | Transparent terminal theme |
 | `spaceship/config.zsh` | `~/.config/spaceship/config.zsh` | Spaceship prompt config (sections, colors) — loaded by `.zshrc` |
 | `nvim/` | `~/.config/nvim` | Neovim (LazyVim + Dracula transparent) |
-| `oh-my-zsh/custom/` | `~/.oh-my-zsh/custom/` | Plugins (fzf-tab, autosuggestions, syntax-highlighting) + Spaceship theme |
+| `oh-my-zsh/custom/` | `~/.oh-my-zsh/custom/` | Plugins (fzf-tab, autosuggestions, syntax-highlighting) + Spaceship theme — symlinked from repo |
 
 ## 🔒 API keys
 

@@ -96,18 +96,20 @@ install_oh_my_zsh() {
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
   fi
 
-  info "Copying custom plugins & spaceship theme from repo..."
+  info "Linking custom plugins & spaceship theme from repo (single source of truth)..."
   mkdir -p "$HOME/.oh-my-zsh/custom/plugins" "$HOME/.oh-my-zsh/custom/themes"
+  # Plugins/themes are symlinked straight into the repo, so the repo is the
+  # single source of truth — edit ~/dotfiles and it's live everywhere.
   for plugin in fzf-tab zsh-autosuggestions zsh-syntax-highlighting; do
     if [ -d "$DOTFILES_DIR/oh-my-zsh/custom/plugins/$plugin" ]; then
       rm -rf "$HOME/.oh-my-zsh/custom/plugins/$plugin"
-      cp -R "$DOTFILES_DIR/oh-my-zsh/custom/plugins/$plugin" "$HOME/.oh-my-zsh/custom/plugins/"
+      ln -sfn "$DOTFILES_DIR/oh-my-zsh/custom/plugins/$plugin" "$HOME/.oh-my-zsh/custom/plugins/$plugin"
     fi
   done
   # Spaceship prompt theme (used via ZSH_THEME="spaceship" in .zshrc)
   if [ -d "$DOTFILES_DIR/oh-my-zsh/custom/themes/spaceship-prompt" ]; then
     rm -rf "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt"
-    cp -R "$DOTFILES_DIR/oh-my-zsh/custom/themes/spaceship-prompt" "$HOME/.oh-my-zsh/custom/themes/"
+    ln -sfn "$DOTFILES_DIR/oh-my-zsh/custom/themes/spaceship-prompt" "$HOME/.oh-my-zsh/custom/themes/spaceship-prompt"
     ln -sfn spaceship-prompt/spaceship.zsh-theme "$HOME/.oh-my-zsh/custom/themes/spaceship.zsh-theme"
   fi
   ok "Oh My Zsh configured"
@@ -157,7 +159,12 @@ EOF
 install_node() {
   if [ "$OS_FAMILY" = "macos" ]; then
     export NVM_DIR="$HOME/.nvm"
-    [ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && . "/opt/homebrew/opt/nvm/nvm.sh"
+    # Detect brew prefix (Apple Silicon: /opt/homebrew, Intel: /usr/local)
+    if [ -x /opt/homebrew/bin/brew ] && [ -s "/opt/homebrew/opt/nvm/nvm.sh" ]; then
+      . "/opt/homebrew/opt/nvm/nvm.sh"
+    elif [ -x /usr/local/bin/brew ] && [ -s "/usr/local/opt/nvm/nvm.sh" ]; then
+      . "/usr/local/opt/nvm/nvm.sh"
+    fi
   else
     if [ ! -d "$HOME/.nvm" ]; then
       info "Installing nvm (Linux)..."
@@ -179,16 +186,30 @@ install_node() {
 # SDKMAN (Java 17 Temurin + Maven) — matches live machine
 # ---------------------------------------------------------------------------
 install_sdkman() {
+  # SDKMAN requires Bash 4+; macOS ships Bash 3.2 — prefer Homebrew bash (Intel: /usr/local, Apple Silicon: /opt/homebrew)
+  local sdkman_bash=""
+  if [ -x /usr/local/bin/bash ]; then
+    sdkman_bash="/usr/local/bin/bash"
+  elif [ -x /opt/homebrew/bin/bash ]; then
+    sdkman_bash="/opt/homebrew/bin/bash"
+  fi
+  if [ -z "$sdkman_bash" ]; then
+    info "SDKMAN needs Bash 4+ — installing bash via Homebrew..."
+    brew install bash
+    [ -x /usr/local/bin/bash ] && sdkman_bash="/usr/local/bin/bash"
+    [ -x /opt/homebrew/bin/bash ] && sdkman_bash="/opt/homebrew/bin/bash"
+  fi
+  [ -z "$sdkman_bash" ] && sdkman_bash="bash"
+
   if [ ! -d "$HOME/.sdkman" ]; then
     info "Installing SDKMAN..."
-    curl -s "https://get.sdkman.io" | bash
+    curl -s "https://get.sdkman.io" | "$sdkman_bash"
   fi
   export SDKMAN_DIR="$HOME/.sdkman"
-  # shellcheck disable=SC1091
-  [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ] && source "$SDKMAN_DIR/bin/sdkman-init.sh"
-  if command -v sdk >/dev/null 2>&1; then
-    sdk install java 17.0.12-tem >/dev/null 2>&1 || true
-    sdk install maven >/dev/null 2>&1 || true
+  if [ -s "$SDKMAN_DIR/bin/sdkman-init.sh" ]; then
+    # sdk installs must also run under Bash 4+
+    # shellcheck disable=SC2016
+    "$sdkman_bash" -c 'export SDKMAN_DIR="$HOME/.sdkman"; source "$SDKMAN_DIR/bin/sdkman-init.sh"; sdk install java 17.0.12-tem >/dev/null 2>&1 || true; sdk install maven >/dev/null 2>&1 || true'
     ok "SDKMAN ready (Java 17 + Maven)"
   else
     warn "SDKMAN init failed — run 'sdk' after opening a new shell"
