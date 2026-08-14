@@ -136,51 +136,15 @@ COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
 plugins=(docker kubectl terraform gcloud history-substring-search zsh-syntax-highlighting zsh-autosuggestions web-search gh aliases kubectx docker-compose helm httpie procs systemadmin brew tldr task taskwarrior tmux thefuck)
 
 # ===== SPACESHIP THEME CONFIGURATION =====
-# (Must be set before Oh My Zsh loads the theme.)
+# Locale must be set before Oh My Zsh loads the theme
 export LANG="en_US.UTF-8"
 export LC_ALL="en_US.UTF-8"
 
-SPACESHIP_PROMPT_ORDER=(
-  time
-  user
-  dir
-  git
-  docker
-  exec_time
-  line_sep
-  char
-)
-
-SPACESHIP_TIME_SHOW=true
-SPACESHIP_TIME_COLOR=cyan
-SPACESHIP_USER_SHOW=always
-SPACESHIP_USER_COLOR=green
-SPACESHIP_HOST_SHOW=always
-SPACESHIP_HOST_COLOR=red
-SPACESHIP_DIR_COLOR=blue
-SPACESHIP_GIT_COLOR=yellow
-SPACESHIP_GIT_STATUS_COLOR=red
-SPACESHIP_EXIT_CODE_SHOW=true
-SPACESHIP_EXIT_CODE_COLOR=red
-SPACESHIP_CHAR_COLOR_SUCCESS=green
-SPACESHIP_CHAR_COLOR_FAILURE=red
-SPACESHIP_CHAR_SYMBOL="➜ "
-SPACESHIP_CHAR_SYMBOL_ROOT="# "
-SPACESHIP_CHAR_SYMBOL_SECONDARY="➜ "
-
-SPACESHIP_PACKAGE_SHOW=false
-SPACESHIP_NODE_SHOW=false
-SPACESHIP_GOLANG_SHOW=false
-SPACESHIP_DOCKER_SHOW=true
-SPACESHIP_VENV_SHOW=false
-SPACESHIP_KUBECTL_SHOW=false
-SPACESHIP_TERRAFORM_SHOW=false
-SPACESHIP_PYTHON_SHOW=false
-SPACESHIP_EMBER_SHOW=false
-SPACESHIP_VI_MODE_SHOW=false
-
-[[ -f "$HOME/dotfiles/spaceship/config.zsh" ]] && source "$HOME/dotfiles/spaceship/config.zsh"
+# All Spaceship settings live in spaceship/config.zsh (repo) -> ~/.config/spaceship/config.zsh
 [[ -f "$HOME/.config/spaceship/config.zsh" ]] && source "$HOME/.config/spaceship/config.zsh"
+
+# Docker CLI completions — in fpath BEFORE Oh My Zsh loads, so its single compinit picks them up
+fpath=(/Users/iemafzal/.docker/completions $fpath)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -426,12 +390,6 @@ export GITHUB_PERSONAL_ACCESS_TOKEN="REPLACE_WITH_YOUR_GITHUB_TOKEN"
 
 # Added by Antigravity
 export PATH="/Users/iemafzal/.antigravity/antigravity/bin:$PATH"
-# The following lines have been added by Docker Desktop to enable Docker CLI completions.
-fpath=(/Users/iemafzal/.docker/completions $fpath)
-autoload -Uz compinit
-compinit
-# End of Docker CLI completions
-
 # Added by Antigravity IDE
 export PATH="/Users/iemafzal/.antigravity-ide/antigravity-ide/bin:$PATH"
 export KUBECONFIG=~/k3s.yaml

@@ -38,7 +38,7 @@ bash setup.sh --help
 | `.gitconfig` | `~/.gitconfig` | Git: delta pager, SSH commit signing |
 | `.vimrc` | `~/.vimrc` | Minimal vim compat (rtp for fzf) |
 | `ghostty/config` | `~/.config/ghostty/config` | Transparent terminal theme |
-| `spaceship/config.zsh` | `~/.config/spaceship/config.zsh` | Prompt overrides |
+| `spaceship/config.zsh` | `~/.config/spaceship/config.zsh` | Spaceship prompt config (sections, colors) — loaded by `.zshrc` |
 | `nvim/` | `~/.config/nvim` | Neovim (LazyVim + Dracula transparent) |
 | `oh-my-zsh/custom/` | `~/.oh-my-zsh/custom/` | Plugins (fzf-tab, autosuggestions, syntax-highlighting) + Spaceship theme |
 
