@@ -1,0 +1,45 @@
+name: release
+on:
+  schedule:
+    - cron: '0 12 * * 3' # At 12:00, every Wednesday
+  workflow_dispatch:
+
+permissions:
+  id-token: write  # Required for OIDC
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release:
+    name: Release
+    if: github.repository_owner == 'spaceship-prompt'
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout Repo
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+          submodules: true
+
+      - name: 🧰 Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: latest
+          registry-url: https://registry.npmjs.org
+
+      - name: 🚀 Release
+        uses: cycjimmy/semantic-release-action@v6
+        id: semantic
+        with:
+          extra_plugins: |
+            semantic-release-replace-plugin
+            @semantic-release/changelog
+            @semantic-release/git
+            semantic-release-license
+        env:
+          # Using PAT here, because published release should trigger a workflow
+          # See: https://docs.github.com/en/actions/reference/events-that-trigger-workflows#triggering-new-workflows-using-a-personal-access-token
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}

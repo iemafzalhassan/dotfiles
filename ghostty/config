@@ -1,0 +1,39 @@
+# Ghostty Configuration - Modern Transparent Theme with Hack Nerd Font Mono
+
+# Font Configuration
+font-family = "Hack Nerd Font Mono"
+font-size = 20
+
+# Modern Transparent Background
+background-opacity = 0.65
+background-blur = 15
+
+# Dark theme colors for modern look
+theme = Builtin Pastel Dark
+
+# Cursor styling
+cursor-color = f5c2e7
+cursor-opacity = 0.8
+cursor-style = bar
+
+# Selection colors
+# selection-background = 585b70
+# selection-foreground = cdd6f4
+
+# Window styling
+window-padding-x = 20
+window-padding-y = 20
+window-padding-balance = true
+window-decoration = none
+
+
+# Font features for better rendering
+font-feature = calt, liga
+
+# Smooth scrolling
+scroll-to-bottom = true
+
+# Modern mouse behavior
+mouse-hide-while-typing = true
+copy-on-select = true
+

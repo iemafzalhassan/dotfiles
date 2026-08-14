@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# Backups
+dotfiles_live_backup_*.tar.gz
+dotfiles_backup_*/
+*.tar.gz
+
+# Local-only overrides (secrets, machine-specific)
+.zshrc.local
+.zprofile.local
+*.local
+
+# Editor/OS junk
+*.swp
+*.swo
+*~
+setup.log
