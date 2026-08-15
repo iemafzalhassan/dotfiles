@@ -1,4 +1,4 @@
-# 🚀 iemafzal's Dotfiles
+# Afzal's Dotfiles
 
 Development environment configs for **macOS (Homebrew)** and **Linux** — zsh, Spaceship
 prompt, Neovim (LazyVim), Ghostty terminal, Oh My Zsh plugins and more. This repo mirrors
